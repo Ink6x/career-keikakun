@@ -1,0 +1,653 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum ProviderMode {
+  real
+  fallback
+  mock
+}
+
+enum EmbeddingMode {
+  local
+  provider
+  disabled
+}
+
+enum AnalysisSessionStatus {
+  draft
+  validating_input
+  running
+  provider_fallback
+  completed
+  validation_error
+  failed
+}
+
+enum PipelineStepStatus {
+  pending
+  running
+  success
+  fallback
+  validation_error
+  failed
+  skipped
+}
+
+enum ValidationStatus {
+  passed
+  failed
+}
+
+enum RawPayloadStatus {
+  active
+  cleared
+  failed
+}
+
+enum RawPayloadKind {
+  career_history
+  job_posting
+  weekly_review_answer
+  interview_answer
+}
+
+enum RequirementType {
+  required
+  preferred
+}
+
+enum CoverageStatus {
+  matched
+  partial
+  missing
+}
+
+enum EvidenceStrength {
+  strong
+  moderate
+  weak
+  none
+}
+
+enum SkillRelationship {
+  matched
+  adjacent
+  missing
+  pending
+}
+
+enum PlanStatus {
+  active
+  completed
+  archived
+}
+
+enum PlanWeekStatus {
+  not_started
+  in_progress
+  completed
+  skipped
+}
+
+enum EvidenceMaterialStatus {
+  not_started
+  in_progress
+  ready
+  archived
+}
+
+model AnonymousVisitor {
+  id                  String            @id @default(cuid())
+  locale              String            @default("ja-JP")
+  rawStoragePolicy    String            @default("default_off")
+  externalAuthSubject String?
+  firstSeenAt         DateTime          @default(now())
+  lastSeenAt          DateTime          @updatedAt
+  profiles            UserProfile[]
+  sessions            AnalysisSession[]
+}
+
+model UserProfile {
+  id                 String            @id @default(cuid())
+  anonymousVisitorId String
+  anonymousVisitor   AnonymousVisitor  @relation(fields: [anonymousVisitorId], references: [id], onDelete: Cascade)
+  currentRole        String?
+  targetRole         String?
+  targetTimeline     String?
+  rawStoragePolicy   String            @default("default_off")
+  createdAt          DateTime          @default(now())
+  updatedAt          DateTime          @updatedAt
+  deletedAt          DateTime?
+  sessions           AnalysisSession[]
+
+  @@index([anonymousVisitorId])
+}
+
+model AnalysisSession {
+  id                       String                @id @default(cuid())
+  anonymousVisitorId       String
+  anonymousVisitor         AnonymousVisitor      @relation(fields: [anonymousVisitorId], references: [id], onDelete: Cascade)
+  userProfileId            String?
+  userProfile              UserProfile?          @relation(fields: [userProfileId], references: [id], onDelete: SetNull)
+  status                   AnalysisSessionStatus @default(draft)
+  source                   String
+  providerMode             ProviderMode          @default(mock)
+  embeddingMode            EmbeddingMode         @default(local)
+  extractedTargetRoleTitle String?
+  idempotencyKey           String?
+  schemaVersion            String
+  startedAt                DateTime              @default(now())
+  completedAt              DateTime?
+  createdAt                DateTime              @default(now())
+  updatedAt                DateTime              @updatedAt
+  inputDocuments           InputDocument[]
+  rawPayloads              RawPayload[]
+  careerProfile            CareerProfile?
+  jobPosting               JobPosting?
+  profileSkills            ProfileSkill[]
+  matchAnalysis            MatchAnalysis?
+  evidenceGaps             EvidenceGap[]
+  careerPlan               CareerPlan?
+  weeklyReviews            WeeklyReview[]
+  reviewMessages           ReviewMessage[]
+  interviewQuestions       InterviewQuestion[]
+  evidenceArtifacts        EvidenceArtifact[]
+  pipelineRuns             PipelineRun[]
+  providerCalls            ProviderCall[]
+  schemaValidations        SchemaValidation[]
+  auditEvents              AuditEvent[]
+  outboxEvents             OutboxEvent[]
+
+  @@unique([anonymousVisitorId, idempotencyKey])
+  @@index([anonymousVisitorId, createdAt])
+  @@index([userProfileId, createdAt])
+}
+
+model InputDocument {
+  id                String          @id @default(cuid())
+  analysisSessionId String
+  analysisSession   AnalysisSession @relation(fields: [analysisSessionId], references: [id], onDelete: Cascade)
+  kind              RawPayloadKind
+  sha256Hash        String
+  language          String          @default("ja-JP")
+  tokenCount        Int
+  summary           String
+  consentReference  String?
+  createdAt         DateTime        @default(now())
+  rawPayload        RawPayload?
+
+  @@unique([analysisSessionId, kind])
+  @@index([analysisSessionId])
+}
+
+model RawPayload {
+  id                         String           @id @default(cuid())
+  analysisSessionId          String
+  analysisSession            AnalysisSession  @relation(fields: [analysisSessionId], references: [id], onDelete: Cascade)
+  kind                       RawPayloadKind
+  inputDocumentId            String?          @unique
+  inputDocument              InputDocument?   @relation(fields: [inputDocumentId], references: [id], onDelete: Restrict)
+  reviewMessageId            String?          @unique
+  reviewMessage              ReviewMessage?   @relation(fields: [reviewMessageId], references: [id], onDelete: Restrict)
+  interviewAnswerId          String?          @unique
+  interviewAnswer            InterviewAnswer? @relation(fields: [interviewAnswerId], references: [id], onDelete: Restrict)
+  encryptedPayloadCiphertext String?
+  encryptedPayloadNonce      String?
+  encryptedPayloadAuthTag    String?
+  encryptionKeyVersion       String
+  consentReference           String
+  status                     RawPayloadStatus @default(active)
+  createdAt                  DateTime         @default(now())
+  clearedAt                  DateTime?
+
+  @@index([analysisSessionId, kind, status])
+}
+
+model CareerProfile {
+  id                           String          @id @default(cuid())
+  analysisSessionId            String          @unique
+  analysisSession              AnalysisSession @relation(fields: [analysisSessionId], references: [id], onDelete: Cascade)
+  structuredExperienceJson     Json            @db.JsonB
+  achievementsJson             Json            @db.JsonB
+  interviewExamplesJson        Json            @db.JsonB
+  extractedSkillsSnapshotJson  Json            @db.JsonB
+  summary                      String
+  schemaVersion                String
+  createdAt                    DateTime        @default(now())
+  updatedAt                    DateTime        @updatedAt
+  profileSkills                ProfileSkill[]
+}
+
+model JobPosting {
+  id                String           @id @default(cuid())
+  analysisSessionId String           @unique
+  analysisSession   AnalysisSession  @relation(fields: [analysisSessionId], references: [id], onDelete: Cascade)
+  roleTitle         String
+  summary           String
+  createdAt         DateTime         @default(now())
+  updatedAt         DateTime         @updatedAt
+  requirements      JobRequirement[]
+  matchAnalysis     MatchAnalysis?
+}
+
+model JobRequirement {
+  id                   String                @id @default(cuid())
+  jobPostingId         String
+  jobPosting           JobPosting            @relation(fields: [jobPostingId], references: [id], onDelete: Cascade)
+  normalizedText       String
+  type                 RequirementType
+  category             String
+  weight               Decimal               @db.Decimal(5, 4)
+  priority             Int
+  sourceReference      String
+  createdAt            DateTime              @default(now())
+  requirementSkills    RequirementSkill[]
+  requirementCoverage  RequirementCoverage[]
+  evidenceGaps         EvidenceGap[]
+  planTasks            PlanTask[]
+  interviewQuestions   InterviewQuestion[]
+  evidenceArtifacts    EvidenceArtifact[]
+
+  @@index([jobPostingId])
+}
+
+model SkillTaxonomy {
+  id                    String                @id @default(cuid())
+  canonicalName         String
+  normalizedName        String
+  category              String
+  status                String                @default("active")
+  seedVersion           String
+  createdAt             DateTime              @default(now())
+  updatedAt             DateTime              @updatedAt
+  aliases               SkillAlias[]
+  sourceAdjacencyRules  SkillAdjacencyRule[]  @relation("SourceSkill")
+  targetAdjacencyRules  SkillAdjacencyRule[]  @relation("TargetSkill")
+  profileSkills         ProfileSkill[]
+  requirementSkills     RequirementSkill[]
+
+  @@unique([normalizedName, category])
+  @@index([category, canonicalName])
+}
+
+model SkillAlias {
+  id                 String        @id @default(cuid())
+  canonicalSkillId   String
+  canonicalSkill     SkillTaxonomy @relation(fields: [canonicalSkillId], references: [id], onDelete: Cascade)
+  aliasText          String
+  normalizedAlias    String
+  locale             String?
+  sourceNote         String?
+  createdAt          DateTime      @default(now())
+
+  @@unique([normalizedAlias, locale])
+}
+
+model SkillAdjacencyRule {
+  id            String        @id @default(cuid())
+  sourceSkillId String
+  sourceSkill   SkillTaxonomy @relation("SourceSkill", fields: [sourceSkillId], references: [id], onDelete: Cascade)
+  targetSkillId String
+  targetSkill   SkillTaxonomy @relation("TargetSkill", fields: [targetSkillId], references: [id], onDelete: Cascade)
+  reason        String
+  status        String        @default("active")
+  createdAt     DateTime      @default(now())
+
+  @@unique([sourceSkillId, targetSkillId])
+}
+
+model ProfileSkill {
+  id                String           @id @default(cuid())
+  analysisSessionId String
+  analysisSession   AnalysisSession  @relation(fields: [analysisSessionId], references: [id], onDelete: Cascade)
+  careerProfileId   String
+  careerProfile     CareerProfile    @relation(fields: [careerProfileId], references: [id], onDelete: Cascade)
+  canonicalSkillId  String?
+  canonicalSkill    SkillTaxonomy?   @relation(fields: [canonicalSkillId], references: [id], onDelete: SetNull)
+  rawMention        String
+  category          String
+  relationship      SkillRelationship
+  sourceReference   String
+  evidenceReference String?
+  createdAt         DateTime         @default(now())
+
+  @@index([analysisSessionId, category])
+}
+
+model RequirementSkill {
+  id                 String            @id @default(cuid())
+  jobRequirementId   String
+  jobRequirement     JobRequirement    @relation(fields: [jobRequirementId], references: [id], onDelete: Cascade)
+  canonicalSkillId   String?
+  canonicalSkill     SkillTaxonomy?    @relation(fields: [canonicalSkillId], references: [id], onDelete: SetNull)
+  rawMention         String
+  category           String
+  relationship       SkillRelationship
+  sourceReference    String
+  createdAt          DateTime          @default(now())
+
+  @@index([jobRequirementId, category])
+}
+
+model MatchAnalysis {
+  id                      String                @id @default(cuid())
+  analysisSessionId       String                @unique
+  analysisSession         AnalysisSession       @relation(fields: [analysisSessionId], references: [id], onDelete: Cascade)
+  jobPostingId            String                @unique
+  jobPosting              JobPosting            @relation(fields: [jobPostingId], references: [id], onDelete: Restrict)
+  matchScore              Int
+  scoringBreakdownJson    Json                  @db.JsonB
+  explanationSnapshotJson Json                  @db.JsonB
+  createdAt               DateTime              @default(now())
+  updatedAt               DateTime              @updatedAt
+  requirementCoverage     RequirementCoverage[]
+  evidenceGaps            EvidenceGap[]
+  keyFindings             KeyFinding[]
+}
+
+model RequirementCoverage {
+  id                      String            @id @default(cuid())
+  matchAnalysisId         String
+  matchAnalysis           MatchAnalysis     @relation(fields: [matchAnalysisId], references: [id], onDelete: Cascade)
+  jobRequirementId        String
+  jobRequirement          JobRequirement    @relation(fields: [jobRequirementId], references: [id], onDelete: Restrict)
+  status                  CoverageStatus
+  evidenceStrength        EvidenceStrength
+  evidenceFromProfileJson Json              @db.JsonB
+  gapNote                 String
+  createdAt               DateTime          @default(now())
+
+  @@index([matchAnalysisId])
+  @@index([jobRequirementId])
+}
+
+model EvidenceGap {
+  id                    String              @id @default(cuid())
+  analysisSessionId     String
+  analysisSession       AnalysisSession     @relation(fields: [analysisSessionId], references: [id], onDelete: Cascade)
+  matchAnalysisId       String
+  matchAnalysis         MatchAnalysis       @relation(fields: [matchAnalysisId], references: [id], onDelete: Cascade)
+  linkedRequirementId   String?
+  linkedRequirement     JobRequirement?     @relation(fields: [linkedRequirementId], references: [id], onDelete: Restrict)
+  title                 String
+  whyItMatters          String
+  evidenceToCreate      String
+  difficulty            String
+  expectedImpact        String
+  createdAt             DateTime            @default(now())
+  planTasks             PlanTask[]
+  interviewQuestions    InterviewQuestion[]
+  evidenceArtifacts     EvidenceArtifact[]
+
+  @@index([analysisSessionId, linkedRequirementId])
+}
+
+model KeyFinding {
+  id              String        @id @default(cuid())
+  matchAnalysisId String
+  matchAnalysis   MatchAnalysis @relation(fields: [matchAnalysisId], references: [id], onDelete: Cascade)
+  group           String
+  title           String
+  detail          String
+  createdAt       DateTime      @default(now())
+}
+
+model CareerPlan {
+  id                String          @id @default(cuid())
+  analysisSessionId String          @unique
+  analysisSession   AnalysisSession @relation(fields: [analysisSessionId], references: [id], onDelete: Cascade)
+  targetRole        String
+  currentWeek       Int             @default(1)
+  status            PlanStatus      @default(active)
+  createdAt         DateTime        @default(now())
+  updatedAt         DateTime        @updatedAt
+  weeks             PlanWeek[]
+  weeklyReviews     WeeklyReview[]
+}
+
+model PlanWeek {
+  id           String         @id @default(cuid())
+  careerPlanId String
+  careerPlan   CareerPlan    @relation(fields: [careerPlanId], references: [id], onDelete: Cascade)
+  weekNumber   Int
+  objective    String
+  reviewPrompt String
+  status       PlanWeekStatus @default(not_started)
+  createdAt    DateTime       @default(now())
+  updatedAt    DateTime       @updatedAt
+  tasks        PlanTask[]
+
+  @@unique([careerPlanId, weekNumber])
+}
+
+model PlanTask {
+  id                  String          @id @default(cuid())
+  planWeekId          String
+  planWeek            PlanWeek        @relation(fields: [planWeekId], references: [id], onDelete: Cascade)
+  title               String
+  evidenceToCreate    String
+  linkedRequirementId String?
+  linkedRequirement   JobRequirement? @relation(fields: [linkedRequirementId], references: [id], onDelete: Restrict)
+  linkedEvidenceGapId String?
+  linkedEvidenceGap   EvidenceGap?    @relation(fields: [linkedEvidenceGapId], references: [id], onDelete: Restrict)
+  status              String          @default("not_started")
+  createdAt           DateTime        @default(now())
+  updatedAt           DateTime        @updatedAt
+
+  @@index([linkedRequirementId])
+  @@index([linkedEvidenceGapId])
+}
+
+model WeeklyReview {
+  id                String           @id @default(cuid())
+  analysisSessionId String
+  analysisSession   AnalysisSession  @relation(fields: [analysisSessionId], references: [id], onDelete: Cascade)
+  careerPlanId      String
+  careerPlan        CareerPlan       @relation(fields: [careerPlanId], references: [id], onDelete: Cascade)
+  weekNumber        Int
+  progressStatus    String
+  summaryJson       Json             @db.JsonB
+  nextActionsJson   Json             @db.JsonB
+  createdAt         DateTime         @default(now())
+  messages          ReviewMessage[]
+  planAdjustments   PlanAdjustment[]
+  evidenceUpdates   EvidenceUpdate[]
+
+  @@index([analysisSessionId])
+}
+
+model ReviewMessage {
+  id                String          @id @default(cuid())
+  analysisSessionId String
+  analysisSession   AnalysisSession @relation(fields: [analysisSessionId], references: [id], onDelete: Cascade)
+  weeklyReviewId    String?
+  weeklyReview      WeeklyReview?   @relation(fields: [weeklyReviewId], references: [id], onDelete: Cascade)
+  role              String
+  messageHash       String
+  messageSummary    String
+  metadataJson      Json            @db.JsonB
+  createdAt         DateTime        @default(now())
+  rawPayload        RawPayload?
+
+  @@index([analysisSessionId])
+}
+
+model PlanAdjustment {
+  id              String       @id @default(cuid())
+  weeklyReviewId  String
+  weeklyReview    WeeklyReview @relation(fields: [weeklyReviewId], references: [id], onDelete: Cascade)
+  changeSetJson   Json         @db.JsonB
+  createdAt       DateTime     @default(now())
+}
+
+model EvidenceUpdate {
+  id                 String            @id @default(cuid())
+  weeklyReviewId     String?
+  weeklyReview       WeeklyReview?     @relation(fields: [weeklyReviewId], references: [id], onDelete: Cascade)
+  evidenceArtifactId String?
+  evidenceArtifact   EvidenceArtifact? @relation(fields: [evidenceArtifactId], references: [id], onDelete: SetNull)
+  metadataJson       Json              @db.JsonB
+  createdAt          DateTime          @default(now())
+}
+
+model InterviewQuestion {
+  id                    String                @id @default(cuid())
+  analysisSessionId     String
+  analysisSession       AnalysisSession       @relation(fields: [analysisSessionId], references: [id], onDelete: Cascade)
+  question              String
+  category              String
+  linkedRequirementId   String?
+  linkedRequirement     JobRequirement?       @relation(fields: [linkedRequirementId], references: [id], onDelete: Restrict)
+  linkedEvidenceGapId   String?
+  linkedEvidenceGap     EvidenceGap?          @relation(fields: [linkedEvidenceGapId], references: [id], onDelete: Restrict)
+  evaluationFocus       String
+  createdAt             DateTime              @default(now())
+  answers               InterviewAnswer[]
+
+  @@index([analysisSessionId, category])
+}
+
+model InterviewAnswer {
+  id                  String               @id @default(cuid())
+  interviewQuestionId String
+  interviewQuestion   InterviewQuestion    @relation(fields: [interviewQuestionId], references: [id], onDelete: Cascade)
+  answerHash          String
+  answerSummary       String
+  createdAt           DateTime             @default(now())
+  rawPayload          RawPayload?
+  evaluation          InterviewEvaluation?
+}
+
+model InterviewEvaluation {
+  id                            String          @id @default(cuid())
+  interviewAnswerId             String          @unique
+  interviewAnswer               InterviewAnswer @relation(fields: [interviewAnswerId], references: [id], onDelete: Cascade)
+  evaluationJson                Json            @db.JsonB
+  suggestedEvidenceUpdatesJson  Json            @db.JsonB
+  improvedAnswerOutline         String
+  createdAt                     DateTime        @default(now())
+}
+
+model EvidenceArtifact {
+  id                    String                 @id @default(cuid())
+  analysisSessionId     String
+  analysisSession       AnalysisSession        @relation(fields: [analysisSessionId], references: [id], onDelete: Cascade)
+  proofType             String
+  title                 String
+  sourceRequirementId   String?
+  sourceRequirement     JobRequirement?        @relation(fields: [sourceRequirementId], references: [id], onDelete: Restrict)
+  sourceEvidenceGapId   String?
+  sourceEvidenceGap     EvidenceGap?           @relation(fields: [sourceEvidenceGapId], references: [id], onDelete: Restrict)
+  whyItMatters          String
+  evidenceToCreate      String
+  nextAction            String
+  source                String
+  targetWeek            Int?
+  status                EvidenceMaterialStatus @default(not_started)
+  metadataJson          Json?                  @db.JsonB
+  createdAt             DateTime               @default(now())
+  updatedAt             DateTime               @updatedAt
+  evidenceUpdates       EvidenceUpdate[]
+
+  @@index([analysisSessionId, status])
+}
+
+model PipelineRun {
+  id                String          @id @default(cuid())
+  analysisSessionId String
+  analysisSession   AnalysisSession @relation(fields: [analysisSessionId], references: [id], onDelete: Cascade)
+  providerMode      ProviderMode
+  embeddingMode     EmbeddingMode
+  status            String
+  startedAt         DateTime        @default(now())
+  completedAt       DateTime?
+  steps             PipelineStep[]
+
+  @@index([analysisSessionId])
+}
+
+model PipelineStep {
+  id                 String             @id @default(cuid())
+  pipelineRunId      String
+  pipelineRun        PipelineRun        @relation(fields: [pipelineRunId], references: [id], onDelete: Cascade)
+  stepName           String
+  attemptNumber      Int                @default(1)
+  status             PipelineStepStatus
+  providerMode       ProviderMode
+  embeddingMode      EmbeddingMode
+  validationStatus   ValidationStatus?
+  schemaValidationId String?
+  inputHashRefsJson  Json               @db.JsonB
+  summaryJson        Json               @db.JsonB
+  errorCode          String?
+  startedAt          DateTime           @default(now())
+  completedAt        DateTime?
+
+  @@unique([pipelineRunId, stepName, attemptNumber])
+  @@index([pipelineRunId, stepName])
+}
+
+model ProviderCall {
+  id                   String          @id @default(cuid())
+  analysisSessionId    String
+  analysisSession      AnalysisSession @relation(fields: [analysisSessionId], references: [id], onDelete: Cascade)
+  providerName         String
+  providerMode         ProviderMode
+  status               String
+  modelName            String?
+  latencyMs            Int?
+  fallbackReasonCode   String?
+  requestMetadataJson  Json            @db.JsonB
+  responseMetadataJson Json            @db.JsonB
+  createdAt            DateTime        @default(now())
+
+  @@index([analysisSessionId])
+}
+
+model SchemaValidation {
+  id                String           @id @default(cuid())
+  analysisSessionId String
+  analysisSession   AnalysisSession  @relation(fields: [analysisSessionId], references: [id], onDelete: Cascade)
+  schemaName        String
+  status            ValidationStatus
+  errorDetailsJson  Json             @db.JsonB
+  createdAt         DateTime         @default(now())
+
+  @@index([analysisSessionId])
+}
+
+model AuditEvent {
+  id                String          @id @default(cuid())
+  analysisSessionId String
+  analysisSession   AnalysisSession @relation(fields: [analysisSessionId], references: [id], onDelete: Cascade)
+  eventType         String
+  entityType        String
+  entityId          String
+  metadataJson      Json            @db.JsonB
+  createdAt         DateTime        @default(now())
+
+  @@index([analysisSessionId, createdAt])
+  @@index([entityType, entityId])
+}
+
+model OutboxEvent {
+  id                String          @id @default(cuid())
+  analysisSessionId String
+  analysisSession   AnalysisSession @relation(fields: [analysisSessionId], references: [id], onDelete: Cascade)
+  eventType         String
+  status            String
+  idempotencyKey    String
+  payloadJson       Json            @db.JsonB
+  availableAt       DateTime
+  createdAt         DateTime        @default(now())
+  updatedAt         DateTime        @updatedAt
+
+  @@unique([idempotencyKey])
+  @@index([status, availableAt])
+}
