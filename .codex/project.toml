@@ -1,0 +1,24 @@
+name = "career-keikakun"
+status = "design-ready"
+primary_guide = "AGENTS.md"
+doc_index = "docs/README.md"
+
+canonical_docs = [
+  "docs/agent-development-guide.md",
+  "docs/system-design.md",
+  "docs/schema-design.md",
+  "docs/skill-taxonomy-design.md",
+  "docs/scoring-design.md",
+  "docs/fixture-design.md",
+  "docs/prisma-design.md",
+  "docs/ui-design.md",
+  "DESIGN.md",
+]
+
+guardrails = [
+  "Do not edit or commit .env files.",
+  "Use generated sample data only.",
+  "Keep provider calls behind adapters.",
+  "Mock fallback must support the full demo without API keys.",
+  "Do not expose raw user input, raw prompts, or raw completions in Process Trace.",
+]
