@@ -31,11 +31,10 @@ LLM/provider output may later provide:
 - semantic extraction
 - Japanese explanation text
 - plan drafts
-- interview feedback drafts
 
 ## Privacy Boundary
 
-Trace, audit, provider metadata, and API views must not contain raw career history, raw job posting, raw review answers, raw interview answers, raw prompts, or raw completions. Use hashes, short summaries, validation results, and structured rows.
+Trace, audit, provider metadata, and API views must not contain raw career history, raw job posting, raw review answers, raw prompts, or raw completions. Use hashes, short summaries, validation results, and structured rows.
 
 Raw storage remains opt-in and must use encrypted `RawPayload` records. Clearing raw storage should not delete derived analysis records.
 

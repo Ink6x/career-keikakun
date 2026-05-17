@@ -28,13 +28,12 @@ The app helps a user paste a career history and a target job posting, then see:
 - evidence gaps
 - a 90-day preparation plan
 - a weekly review workflow
-- an Interview Studio for role-specific answer practice
 - an Evidence Builder for tracking evidence materials and portfolio proof points
 - a Process Trace that shows how the AI pipeline was controlled
 
 The visible product should feel like a clear toC web app. The implementation
 should prove professional AI workflow engineering depth to contract clients,
-recruiters, and technical interviewers.
+recruiters, and technical reviewers.
 
 The project should demonstrate that the developer can build AI features as
 controlled product workflows, not just prompt an LLM and display text.
@@ -47,7 +46,6 @@ build the full public demo experience in one pass:
 - Analyze
 - Plan
 - Review
-- Interview Studio
 - Evidence Builder
 - Process Trace
 - README, architecture notes, tests, and CI
@@ -76,7 +74,6 @@ Start
        - Analyze
        - Plan
        - Review
-       - Interview Studio
        - Evidence Builder
        - Process Trace
 ```
@@ -127,7 +124,6 @@ Navigation labels:
 - Analyze
 - Plan
 - Review
-- Interview Studio
 - Evidence Builder
 - Process Trace
 
@@ -142,7 +138,6 @@ Route map:
   and next action.
 - `/workspace/[sessionId]/plan`: 12-week plan.
 - `/workspace/[sessionId]/review`: weekly review flow.
-- `/workspace/[sessionId]/interview`: Interview Studio.
 - `/workspace/[sessionId]/evidence`: Evidence Builder.
 - `/workspace/[sessionId]/trace`: Process Trace.
 
@@ -167,7 +162,6 @@ Required sections:
 - Workspace navigation: horizontally scrollable top tab bar.
 - Review: chat flow first; week plan and collected summary are secondary and
   collapsible.
-- Interview Studio: question list first; selected answer and evaluation below.
 - Evidence Builder: compact filter chips and material list first; selected
   material detail below or drill-in.
 - Process Trace: vertical event list instead of dense tables.
@@ -241,43 +235,15 @@ Coach feedback should critique evidence, answers, and preparation state rather
 than the user's personality. It should clearly identify weak or generic parts
 and pair them with concrete next actions.
 
-### Interview Studio
-
-Interview Studio turns the analysis into role-specific interview practice.
-
-Required capabilities:
-
-- generate exactly 6 initial questions from target role, job requirements,
-  evidence gaps, and plan progress
-- collect a user answer for a selected question
-- evaluate the answer for specificity, business impact, role fit, and evidence
-  strength
-- produce a revised answer outline in Japanese
-- link feedback to relevant requirements and evidence gaps
-
-Interview feedback should be calm but direct. It may say that an answer is too
-generic, unsupported, or weakly connected to the target role, but it must also
-tell the user what to add next.
-
-Initial question distribution:
-
-- `behavioral`: 2
-- `role_skill`: 2
-- `gap`: 1
-- `portfolio_evidence`: 1
-
-The answer evaluation may use an LLM for language feedback, but scoring labels,
-required fields, schema validation, and audit events are code-controlled.
-
 ### Evidence Builder
 
-Evidence Builder is an evidence material board. It turns analysis, reviews, plan
-work, and interview feedback into structured records of proof the user should
-create, collect, or improve.
+Evidence Builder is an evidence material board. It turns analysis, reviews, and
+plan work into structured records of proof the user should create, collect, or
+improve.
 
-It does not generate resume bullets, README sections, interview stories, or
-other prose drafts in the first design. The product value is evidence
-organization and progress tracking, not document writing.
+It does not generate resume bullets, README sections, or other prose drafts in
+the first design. The product value is evidence organization and progress
+tracking, not document writing.
 
 Each evidence material should show:
 
@@ -287,7 +253,7 @@ Each evidence material should show:
 - why it matters
 - evidence to create
 - next action
-- source: analysis, plan, review, or interview
+- source: analysis, plan, or review
 - target week when available
 - status: not started, in progress, ready, or archived
 
@@ -296,7 +262,7 @@ frame materials as preparation targets and public proof candidates.
 
 ### Process Trace
 
-Process Trace is technical proof for clients and interviewers.
+Process Trace is technical proof for clients and reviewers.
 
 Show:
 
@@ -390,7 +356,6 @@ LLM responsibilities:
 
 - extract experience, achievements, skills, domains, decision-making examples,
   and evidence candidates from career history
-- identify interview-usable examples
 
 Code responsibilities:
 
@@ -486,40 +451,6 @@ Primary output: `CareerPlan`
 Plan generation must be constrained by Analyze results. Do not let the LLM write
 a generic career plan without using requirement coverage and evidence gaps.
 
-### `generateInterviewSet`
-
-LLM responsibilities:
-
-- draft role-specific interview questions and answer prompts
-- adapt question wording to the target role and extracted requirements
-
-Code responsibilities:
-
-- enforce exactly 6 initial questions and fixed categories
-- link questions to requirements or evidence gaps
-- validate output with Zod
-- persist generated questions and trace events
-
-Primary output: `InterviewQuestion[]`
-
-### `evaluateInterviewAnswer`
-
-LLM responsibilities:
-
-- summarize answer strengths and weaknesses
-- suggest a clearer STAR-style answer outline
-- produce practical Japanese feedback
-
-Code responsibilities:
-
-- validate answer input length
-- prevent raw answer exposure in Process Trace
-- enforce evaluation categories and score labels
-- link evaluation to requirements, gaps, and artifacts
-- record audit events
-
-Primary output: `InterviewEvaluation`
-
 ### `buildEvidenceBoard`
 
 LLM responsibilities:
@@ -531,7 +462,7 @@ LLM responsibilities:
 Code responsibilities:
 
 - derive evidence material records from evidence gaps and plan tasks
-- preserve source links to requirements, gaps, reviews, and interview feedback
+- preserve source links to requirements, gaps, and reviews
 - enforce proof types, status enum, target week, and required fields
 - avoid unsupported claims such as guaranteed hiring or salary gains
 - validate output and persist evidence material state
@@ -609,8 +540,8 @@ be deterministic.
 ## 8. Schema And Data Model Direction
 
 Use PostgreSQL and Prisma as the schema target. The schema should support the
-full demo flow: Analyze, Plan, Review, Interview Studio, Evidence Builder,
-Process Trace, provider observability, retries, and future account-based use.
+full demo flow: Analyze, Plan, Review, Evidence Builder, Process Trace, provider
+observability, retries, and future account-based use.
 
 The central unit is `AnalysisSession`. A session represents one analysis run and
 owns the parsed profile, job requirements, normalized skills, match analysis,
@@ -628,20 +559,20 @@ create new sessions instead of overwriting prior results.
 - `AnalysisSession`: one analysis attempt. Store status, source, provider mode,
   embedding mode, optional user profile link, extracted target role title,
   idempotency key, schema version, and started/completed timestamps. The status
-  represents only the initial analysis pipeline state; review, interview, and
-  evidence progress are derived from child records and audit events. Keep
+  represents only the initial analysis pipeline state; review and evidence
+  progress are derived from child records and audit events. Keep
   `extractedTargetRoleTitle` as a session-level snapshot for history and
   workspace headers.
 - `InputDocument`: career history or job posting input reference. Store kind,
   SHA-256 hash, language, token count, summary, and raw-storage consent
   reference. Use a unique constraint on `(analysisSessionId, kind)`.
 - `RawPayload`: shared encrypted raw storage record for consented career
-  history, job posting, review answer, or interview answer text. Store source
-  kind, one subject link, ciphertext, nonce/IV, auth tag, encryption key
-  version, consent reference, status, creation timestamp, and cleared timestamp.
+  history, job posting, or review answer text. Store source kind, one subject
+  link, ciphertext, nonce/IV, auth tag, encryption key version, consent
+  reference, status, creation timestamp, and cleared timestamp.
 - `CareerProfile`: structured profile output from `parseProfile`, including
-  experience, achievements, extracted skill evidence, interview-ready examples,
-  summary, and schema version.
+  experience, achievements, extracted skill evidence, summary, and schema
+  version.
 - `JobPosting` and `JobRequirement`: job-level structured output from
   `extractJobRequirements`. Store the role title on `JobPosting`; store each
   requirement as a row with normalized text, type, category, weight, priority,
@@ -661,13 +592,10 @@ create new sessions instead of overwriting prior results.
 - `WeeklyReview`, `ReviewMessage`, `PlanAdjustment`, and `EvidenceUpdate`: the
   bounded review conversation, validated structured review result, deterministic
   plan updates, and evidence changes produced by the review flow.
-- `InterviewQuestion`, `InterviewAnswer`, and `InterviewEvaluation`: generated
-  interview prompts, user answers, and feedback. Link questions to relevant
-  requirements or evidence gaps when possible.
 - `EvidenceArtifact`: a reusable evidence material record shared by Plan,
-  Review, Interview Studio, and Evidence Builder. Store proof type, title, why
-  it matters, evidence to create, next action, source, status, target week, and
-  linked requirements/gaps. Do not store generated prose drafts as the primary
+  Review, and Evidence Builder. Store proof type, title, why it matters,
+  evidence to create, next action, source, status, target week, and linked
+  requirements/gaps. Do not store generated prose drafts as the primary
   artifact.
 - `PipelineRun`, `PipelineStep`, `SchemaValidation`, `ProviderCall`,
   `AuditEvent`, and `OutboxEvent`: process trace, validation evidence, provider
@@ -677,9 +605,8 @@ create new sessions instead of overwriting prior results.
 
 - Store hashes, summaries, and structured derived fields by default.
 - The first implementation includes opt-in encrypted raw storage.
-- Store raw career history, raw job postings, raw review answers, or raw
-  interview answers only when the user has explicitly opted into raw storage for
-  that submission.
+- Store raw career history, raw job postings, or raw review answers only when
+  the user has explicitly opted into raw storage for that submission.
 - When raw storage is enabled, store encrypted payloads in the shared
   `RawPayload` table. Do not duplicate encrypted payload columns across
   business tables, and do not store plaintext raw input in normal business
@@ -721,11 +648,10 @@ create new sessions instead of overwriting prior results.
 - Enforce one `PlanWeek` per `(careerPlanId, weekNumber)`.
 - Enforce one `RawPayload` subject link per raw payload. Use a database check
   constraint if Prisma cannot express the rule directly.
-- Enforce unique one-to-one raw payload links for `InputDocument`,
-  `ReviewMessage`, and `InterviewAnswer` when present.
-- Enforce important workflow link constraints in the database: `PlanTask`,
-  `InterviewQuestion`, and `EvidenceArtifact` must each link to at least one
-  requirement or evidence gap.
+- Enforce unique one-to-one raw payload links for `InputDocument` and
+  `ReviewMessage` when present.
+- Enforce important workflow link constraints in the database: `PlanTask` and
+  `EvidenceArtifact` must each link to at least one requirement or evidence gap.
 - Keep optional context links, such as `AnalysisSession.userProfileId` and
   `EvidenceGap.linkedRequirementId`, nullable and validate their meaning in the
   application layer.
@@ -769,7 +695,6 @@ Minimum tests:
 - fixture tests for the three sample roles
 - mock provider tests for the main analysis flow
 - review structuring and plan update tests
-- interview question generation and answer evaluation tests
 - evidence board derivation and status update tests
 - raw-storage tests for default off, consent-based encrypted storage,
   decryption failure handling, and raw payload deletion
@@ -782,13 +707,12 @@ Acceptance criteria:
   gaps, and next action.
 - Plan screen renders 12 weekly cards.
 - Review screen collects structured weekly review data from chat-like input.
-- Interview Studio renders generated questions and evaluates an answer.
 - Evidence Builder renders evidence materials with proof type, linked gap or
   requirement, next action, target week, and status updates.
 - Process Trace shows pipeline status, provider mode, embedding mode,
   validation status, scoring breakdown, and audit events.
-- Raw career history, job posting, review answers, and interview answers are
-  not exposed in Process Trace, AuditEvent, ProviderCall, or logs.
+- Raw career history, job posting, and review answers are not exposed in
+  Process Trace, AuditEvent, ProviderCall, or logs.
 - Build/check/test commands pass before the full demo is considered complete.
 
 ## 11. Source Documents
