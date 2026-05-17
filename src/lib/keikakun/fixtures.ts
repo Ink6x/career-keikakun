@@ -275,7 +275,7 @@ function createKeyFindings(variant: FixtureVariant): KeyFinding[] {
   return [
     finding("strength", "CS から Product Ops への転用可能性", "顧客要望整理、FAQ 改善、部門連携は目標職種に近い。"),
     finding("priority_gap", "データ分析とフィードバックループ", "分析、SQL、改善プロセス設計の証拠がまだ弱い。"),
-    finding("evidence_needed", "小さな分析成果物", "問い合わせ分類と改善候補のメモを作ると、面接で話せる証拠になる。")
+    finding("evidence_needed", "小さな分析成果物", "問い合わせ分類と改善候補のメモを作ると、応募時に見せられる証拠になる。")
   ];
 }
 
@@ -309,10 +309,10 @@ function createPlanWeeks(evidenceGaps: EvidenceGap[], strongPlan: boolean): Plan
     "改善効果を定量化する",
     "Product Ops 向けのケースメモを作る",
     "関係者説明のストーリーを整える",
-    "面接回答の弱い証拠を補う",
+    "弱い証拠を補強する追加メモを作る",
     "証拠素材を公開可能な形に整える",
-    "模擬面接で回答を圧縮する",
-    "応募・面接用の証拠セットを仕上げる"
+    "ケースメモを短く要約する練習をする",
+    "応募用の証拠セットを仕上げる"
   ];
 
   return objectives.map((objective, index) => {
