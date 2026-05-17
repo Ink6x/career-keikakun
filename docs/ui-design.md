@@ -12,8 +12,8 @@ The user should understand what to do within a few seconds:
 
 1. Paste a career history.
 2. Paste a target job posting.
-3. See match score, gaps, evidence needs, a 90-day action plan, interview
-   practice, and evidence materials to create.
+3. See match score, gaps, evidence needs, a 90-day action plan, and evidence
+   materials to create.
 
 The visible product should be simple and approachable. The implementation behind
 it should show professional AI application engineering: structured extraction,
@@ -24,7 +24,7 @@ state updates, validation, and traceable audit events.
 
 - Contract clients evaluating whether to outsource AI/web development work.
 - Recruiters or hiring managers looking for a clear portfolio project.
-- Technical interviewers who may inspect the implementation and architecture.
+- Technical reviewers who may inspect the implementation and architecture.
 
 ## UX Principles
 
@@ -49,7 +49,7 @@ for career preparation.
 Personality:
 
 - Fundamentally supportive and on the user's side.
-- Objective when evaluating fit, evidence, and interview answers.
+- Objective when evaluating fit and evidence.
 - Direct about weak points instead of softening every gap.
 - Calm, specific, and action-oriented.
 - Professional enough for working adults, not playful or mascot-like.
@@ -67,7 +67,6 @@ Voice rules:
 Example tone:
 
 - Good: `この経験は要件に近いです。ただし成果の数字がないため、証拠としてはまだ弱いです。次は改善前後の指標を1つ追加しましょう。`
-- Good: `回答の構成は使えます。弱いのは、あなたが何を判断したのかが見えない点です。意思決定の理由を1文足してください。`
 - Avoid: `完璧です。これなら安心です。`
 - Avoid: `このままだと厳しいです。`
 
@@ -80,7 +79,6 @@ Start
        - Analyze
        - Plan
        - Review
-       - Interview Studio
        - Evidence Builder
        - Process Trace
 ```
@@ -153,7 +151,6 @@ Left menu:
 - Analyze
 - Plan
 - Review
-- Interview Studio
 - Evidence Builder
 - Process Trace
 
@@ -172,7 +169,6 @@ Routes:
 - `/workspace/[sessionId]/analyze`
 - `/workspace/[sessionId]/plan`
 - `/workspace/[sessionId]/review`
-- `/workspace/[sessionId]/interview`
 - `/workspace/[sessionId]/evidence`
 - `/workspace/[sessionId]/trace`
 
@@ -230,7 +226,6 @@ Use three compact groups:
   - Areas to address within 90 days.
 - Evidence Needed:
   - Concrete proof the user should create.
-  - Interview proof points to prepare.
   - Evidence materials such as small demos, analysis notes, work samples, or
     measurable examples.
 
@@ -363,49 +358,6 @@ Design notes:
 - Behind the scenes, the submitted review must be converted into structured
   data and used to update the plan state.
 
-## Interview Studio Screen
-
-Purpose: help the user turn gaps and evidence candidates into interview-ready
-answers for the target role.
-
-Content:
-
-- Question list generated from:
-  - target role
-  - job requirements
-  - requirement coverage
-  - evidence gaps
-  - plan progress
-- Initial question count: 6.
-- Initial categories:
-  - behavioral: 2
-  - role skill: 2
-  - gap: 1
-  - portfolio/evidence: 1
-- Selected question detail.
-- Answer input.
-- Evaluate answer action.
-- Evaluation result:
-  - specificity
-  - business impact
-  - role fit
-  - evidence strength
-  - weak points
-  - revised STAR-style outline
-  - linked requirements or gaps
-
-Design notes:
-
-- On mobile, show the question list first, then the selected question, answer
-  input, and evaluation result below it.
-- Interview Studio is a structured practice surface, not a free chat.
-- Keep the question list scannable and let the selected question own the main
-  interaction area.
-- Evaluation should be direct and practical. Avoid language that implies the app
-  can create a guaranteed hiring answer.
-- Feedback may say an answer is too generic or unsupported, but it must pair the
-  critique with a concrete improvement.
-
 ## Evidence Builder Screen
 
 Purpose: organize the proof the user should create, collect, or improve. This is
@@ -416,7 +368,7 @@ Content:
 - Evidence material filters:
   - status
   - proof type
-  - source: analysis, plan, review, interview
+  - source: analysis, plan, review
   - linked requirement or gap
 - Evidence material list.
 - Selected material detail:
@@ -439,12 +391,12 @@ Design notes:
 - Evidence Builder should make proof creation feel concrete without generating
   application text.
 - Use the Evidence Gold accent sparingly for material metadata and source links.
-- Do not include regenerate, rewrite, resume-bullet, README-section, or
-  interview-story generation actions.
+- Do not include regenerate, rewrite, resume-bullet, or README-section
+  generation actions.
 
 ## Process Trace Screen
 
-Purpose: provide technical proof for clients and interviewers.
+Purpose: provide technical proof for clients and reviewers.
 
 Content:
 
@@ -454,7 +406,6 @@ Content:
   - normalizeSkills
   - scoreMatch
   - generatePlan
-  - generateInterviewSet
   - buildEvidenceBoard
   - recordAuditEvent
 - Status for each step:
@@ -492,8 +443,6 @@ Design notes:
 - Workspace navigation becomes a horizontally scrollable top tab bar.
 - Review shows the chat flow first. Week plan and collected review summary are
   secondary and collapsible.
-- Interview Studio shows the question list first, then selected answer and
-  evaluation below.
 - Evidence Builder uses compact filter chips and shows the material list before
   selected detail.
 - Process Trace uses a vertical event list instead of tables.
@@ -518,7 +467,7 @@ here during fixture or implementation planning.
 - 2026-05-15: Trace label finalized as `Process Trace`.
 - 2026-05-15: Visual tone and component direction moved into `DESIGN.md`.
 - 2026-05-15: Scope changed from a narrow screen set to the full public demo:
-  Analyze, Plan, Review, Interview Studio, Evidence Builder, and Process Trace.
+  Analyze, Plan, Review, Evidence Builder, and Process Trace.
 - 2026-05-15: Session model confirmed as anonymous session history, without
   account registration.
 - 2026-05-15: Provider strategy confirmed as real-first with deterministic mock
@@ -531,5 +480,4 @@ here during fixture or implementation planning.
 - 2026-05-15: AI coach persona confirmed as supportive but objective and direct,
   similar to a practical cram-school teacher for career preparation.
 - 2026-05-15: Mobile layout confirmed: top scrollable workspace tabs, chat-first
-  Review, question-first Interview Studio, list-first Evidence Builder, and
-  event-list Process Trace.
+  Review, list-first Evidence Builder, and event-list Process Trace.

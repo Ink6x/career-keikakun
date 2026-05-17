@@ -3,7 +3,7 @@ import { RefreshCcw } from "lucide-react";
 import type { AnalysisSessionSummary } from "@/lib/keikakun/types";
 import { buttonClassName } from "@/components/ui/Button";
 
-type WorkspaceTab = "analyze" | "plan" | "review" | "interview" | "evidence" | "trace";
+type WorkspaceTab = "analyze" | "plan" | "review" | "evidence" | "trace";
 
 interface WorkspaceShellProps {
   activeTab: WorkspaceTab;
@@ -15,7 +15,6 @@ const tabs: Array<{ key: WorkspaceTab; label: string; href: string }> = [
   { key: "analyze", label: "分析", href: "analyze" },
   { key: "plan", label: "プラン", href: "plan" },
   { key: "review", label: "週次レビュー", href: "review" },
-  { key: "interview", label: "面接スタジオ", href: "interview" },
   { key: "evidence", label: "証拠ボード", href: "evidence" },
   { key: "trace", label: "プロセス確認", href: "trace" }
 ];

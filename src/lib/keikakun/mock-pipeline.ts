@@ -4,7 +4,6 @@ import {
   type AuditEvent,
   type EvidenceArtifact,
   type EvidenceMaterialStatus,
-  type InterviewEvaluation,
   type ProviderMode,
   type SessionBundle,
   type WeeklyReview
@@ -52,7 +51,6 @@ export function buildMockSession(options: BuildMockSessionOptions): SessionBundl
     completedAt: timestamp,
     workspaceProgress: {
       reviewCount: 0,
-      evaluatedAnswerCount: 0,
       evidenceMaterialCount: fixture.evidenceArtifacts.length,
       readyEvidenceCount: evidenceStatusCounts.ready,
       lastActivityAt: timestamp
@@ -97,11 +95,6 @@ export function buildMockSession(options: BuildMockSessionOptions): SessionBundl
       reviewHistory: [],
       openTasks: fixture.planWeeks.flatMap((week) => week.tasks).filter((task) => task.status !== "completed"),
       latestAdjustments: []
-    },
-    interview: {
-      questions: fixture.interviewQuestions,
-      evaluations: [],
-      linkedEvidenceMaterials: fixture.evidenceArtifacts
     },
     evidence: {
       materials: fixture.evidenceArtifacts,
@@ -160,39 +153,6 @@ export function createStructuredWeeklyReview(
     ],
     planAdjustments: [`${now.toISOString()} に週次レビューを反映`],
     evidenceUpdates: ["証拠素材の次アクションを更新候補に追加"]
-  };
-}
-
-export function evaluateMockInterviewAnswer(
-  questionKey: string,
-  answerText: string
-): InterviewEvaluation {
-  const hasNumber = /\d|％|%/.test(answerText);
-  const hasAction = /改善|整理|分析|設計|共有|判断/.test(answerText);
-  const specificity = hasNumber ? 76 : 54;
-  const evidenceStrength = hasNumber && hasAction ? 72 : 48;
-  const overall = Math.round((68 + specificity + 70 + evidenceStrength) / 4);
-
-  return {
-    questionKey,
-    answerSummary: summarizeForTrace(answerText),
-    scores: {
-      structure: 68,
-      specificity,
-      roleRelevance: 70,
-      evidenceStrength,
-      overall
-    },
-    strengths: ["顧客対応の実務経験を起点に話せている。"],
-    improvementPoints: [
-      hasNumber
-        ? "数字は入っているので、判断理由と次の改善につなげる。"
-        : "成果や規模の数字がないため、証拠としてまだ弱い。",
-      "求人要件のどの項目に対応する話なのかを明示する。"
-    ],
-    missingEvidence: hasNumber ? [] : ["問い合わせ件数、削減率、対応時間などの前後比較"],
-    improvedAnswerOutline:
-      "結論: 顧客要望を構造化し、改善候補に変えた経験があります。状況: 問い合わせが繰り返し発生していました。行動: カテゴリ化し、影響と頻度で優先度を整理しました。結果: 改善候補を関係者に共有し、次の施策につなげました。"
   };
 }
 
@@ -255,7 +215,6 @@ function createPipelineSteps(
     "normalizeSkills",
     "scoreMatch",
     "generatePlan",
-    "generateInterviewSet",
     "buildEvidenceBoard",
     "recordAuditEvent"
   ];
@@ -283,7 +242,6 @@ function summaryForStep(stepName: string, fixture: FixtureCase): string {
     normalizeSkills: "alias と adjacency rule でスキルを正規化しました。",
     scoreMatch: "決定論的スコアリングを実行しました。",
     generatePlan: "12週間の準備計画を作成しました。",
-    generateInterviewSet: "カテゴリ固定の初期6問を作成しました。",
     buildEvidenceBoard: `${fixture.evidenceArtifacts.length}件の証拠素材を作成しました。`,
     recordAuditEvent: "trace-safe な監査イベントを記録しました。"
   };

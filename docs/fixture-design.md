@@ -53,7 +53,7 @@ Expected demo match:
 ```
 
 The score should be high enough to feel reachable and low enough to create
-visible gaps, plan tasks, interview feedback, and evidence materials.
+visible gaps, plan tasks, and evidence materials.
 
 ## 2. Why This Persona
 
@@ -118,9 +118,7 @@ Mock provider output must:
 
 - complete the full flow without API keys
 - use the same Zod schemas as real provider output
-- produce deterministic Analyze, Plan, Review, Interview, Evidence, and Trace
-  data
-- include 6 interview questions
+- produce deterministic Analyze, Plan, Review, Evidence, and Trace data
 - include 12 plan weeks
 - include evidence materials linked to gaps and requirements
 - include trace-safe provider, validation, scoring, and fallback metadata

@@ -32,9 +32,9 @@ application services and repositories.
   durable IDs after validation.
 - Provider outputs may use temporary keys such as `requirementKey`, `skillKey`,
   `gapKey`, `weekKey`, or `questionKey` for linking within one pipeline run.
-- Raw career history, raw job posting text, raw review answers, raw interview
-  answers, raw prompts, and raw provider completions are never valid fields in
-  trace, audit, provider-call, or workspace response schemas.
+- Raw career history, raw job posting text, raw review answers, raw prompts,
+  and raw provider completions are never valid fields in trace, audit,
+  provider-call, or workspace response schemas.
 - Every LLM-derived or provider-derived payload includes `schemaVersion`.
 - API response schemas expose user-facing state, not raw database rows.
 - API request schemas should be strict at the top level and return field-level
@@ -76,7 +76,6 @@ Initial request limits:
 - `careerHistoryText`: 200 to 30,000 characters
 - `jobPostingText`: 200 to 30,000 characters
 - `weeklyReviewText`: 20 to 4,000 characters
-- `interviewAnswerText`: 20 to 8,000 characters
 - `note`: 0 to 2,000 characters
 - `summary`: 1 to 600 characters
 - short labels such as titles and role names: 1 to 120 characters
@@ -149,7 +148,7 @@ ValidationStatus = passed | failed
 RawPayloadStatus = active | cleared | failed
 RawPayloadKind =
   career_history | job_posting |
-  weekly_review_answer | interview_answer
+  weekly_review_answer
 ```
 
 ### Pipeline Steps
@@ -163,7 +162,6 @@ PipelineStepName =
   normalizeSkills |
   scoreMatch |
   generatePlan |
-  generateInterviewSet |
   buildEvidenceBoard |
   recordAuditEvent
 ```
@@ -194,17 +192,14 @@ Difficulty = low | medium | high
 Impact = low | medium | high
 EvidenceProofType =
   case_study | measurable_result | work_sample |
-  project_demo | process_document | technical_note |
-  interview_example
+  project_demo | process_document | technical_note
 EvidenceMaterialStatus = not_started | in_progress | ready | archived
-EvidenceSource = analysis | plan | review | interview
+EvidenceSource = analysis | plan | review
 ```
 
-### Interview And Review
+### Review
 
 ```text
-InterviewQuestionCategory =
-  behavioral | role_skill | gap | portfolio_evidence
 ReviewProgressStatus = on_track | blocked | adjusted
 ```
 
@@ -248,23 +243,6 @@ Rules:
 - The session must belong to the current anonymous visitor.
 - Raw text may be encrypted only when consent is true.
 
-### `SubmitInterviewAnswerRequest`
-
-Purpose: evaluate one answer in Interview Studio.
-
-Fields:
-
-- `analysisSessionId`
-- `interviewQuestionId`
-- `interviewAnswerText`
-- `rawStorageConsent`
-
-Rules:
-
-- The question must belong to the session.
-- Store `answerHash` and `answerSummary` by default.
-- Store encrypted raw answer text in `RawPayload` only when consent is true.
-
 ### `UpdateEvidenceMaterialRequest`
 
 Purpose: update the status and notes for one evidence material.
@@ -307,7 +285,6 @@ Writes or feeds:
 - `CareerProfile`
 - profile skill mentions
 - achievements
-- interview-ready examples
 - input summary
 
 Shape:
@@ -318,7 +295,6 @@ Shape:
 - `structuredExperience[]`
 - `skills[]`
 - `achievements[]`
-- `interviewExamples[]`
 - `inputSummary`
 - `warnings[]`
 
@@ -545,39 +521,6 @@ Rules:
 - Each week should have at least one task.
 - Tasks should link to a requirement or evidence gap when possible.
 
-### `GenerateInterviewSetOutput`
-
-Produced by: `generateInterviewSet`
-
-Writes or feeds:
-
-- `InterviewQuestion[]`
-
-Shape:
-
-- `questions[]`
-
-`questions[]` fields:
-
-- `questionKey`
-- `question`
-- `category`
-- `linkedRequirementKey`
-- `linkedEvidenceGapKey`
-- `evaluationFocus`
-
-Rules:
-
-- Exactly 6 questions are required.
-- Category distribution is fixed:
-  - `behavioral`: 2
-  - `role_skill`: 2
-  - `gap`: 1
-  - `portfolio_evidence`: 1
-- At least one question must link to an `EvidenceGap`.
-- At least one question must ask about portfolio or evidence creation.
-- Avoid concentrating all questions on one requirement.
-
 ### `BuildEvidenceBoardOutput`
 
 Produced by: `buildEvidenceBoard`
@@ -608,12 +551,12 @@ Shape:
 
 Rules:
 
-- `status` starts as `not_started` unless review or interview activity creates a
-  more specific later material.
-- `source` is `analysis`, `plan`, `review`, or `interview`.
+- `status` starts as `not_started` unless review activity creates a more
+  specific later material.
+- `source` is `analysis`, `plan`, or `review`.
 - `targetWeek` is optional but must be 1 through 12 when present.
-- No generated resume bullets, README sections, interview stories, rewrite
-  variants, or prose drafts are valid fields.
+- No generated resume bullets, README sections, rewrite variants, or prose
+  drafts are valid fields.
 
 ### `StructuredWeeklyReviewOutput`
 
@@ -642,42 +585,6 @@ Rules:
 - New evidence material may be proposed only as structured material fields, not
   generated prose.
 - Raw review text is never part of the output.
-
-### `InterviewEvaluationOutput`
-
-Produced by: interview answer evaluation.
-
-Writes or feeds:
-
-- `InterviewEvaluation`
-- optional `EvidenceUpdate`
-
-Shape:
-
-- `answerSummary`
-- `scores`
-- `strengths[]`
-- `improvementPoints[]`
-- `missingEvidence[]`
-- `improvedAnswerOutline`
-- `suggestedEvidenceUpdates[]`
-
-`scores` fields:
-
-- `structure`
-- `specificity`
-- `roleRelevance`
-- `evidenceStrength`
-- `overall`
-
-Rules:
-
-- Scores are integers from 0 to 100.
-- `improvedAnswerOutline` is allowed for Interview Studio feedback.
-- `improvedAnswerOutline` must not fabricate evidence not present in the answer,
-  profile, or existing analysis.
-- Evidence updates are structured material updates only, not resume or README
-  prose generation.
 
 ## 7. API View Schemas
 
@@ -723,8 +630,7 @@ Rules:
 - Show one target role label in normal UI. Do not separately expose
   `JobPosting.roleTitle`, `AnalysisSession.extractedTargetRoleTitle`, and
   `CareerPlan.targetRole` as competing labels.
-- Include enough linked IDs for UI navigation to Plan, Interview Studio, and
-  Evidence Builder.
+- Include enough linked IDs for UI navigation to Plan and Evidence Builder.
 
 ### `PlanView`
 
@@ -755,21 +661,6 @@ Rules:
 
 - Do not expose raw review answer text.
 - Use summaries and structured next actions.
-
-### `InterviewStudioView`
-
-Fields:
-
-- `session`
-- `questions[]`
-- `evaluations[]`
-- `linkedEvidenceMaterials[]`
-
-Rules:
-
-- The initial question list must contain exactly 6 questions.
-- Raw interview answers are not returned unless a future explicit edit flow is
-  designed.
 
 ### `EvidenceBoardView`
 
@@ -812,7 +703,7 @@ Provider output validation fails when:
 
 - required fields are missing
 - enum values are unknown
-- arrays violate exact counts, such as 12 plan weeks or 6 interview questions
+- arrays violate exact counts, such as 12 plan weeks
 - links reference non-existent temporary keys
 - provider output includes server-owned fields
 - provider output includes raw input, raw prompt, or raw completion text

@@ -24,15 +24,6 @@ export const SubmitWeeklyReviewRequestSchema = z
   })
   .strict();
 
-export const SubmitInterviewAnswerRequestSchema = z
-  .object({
-    analysisSessionId: z.string().min(1),
-    interviewQuestionId: z.string().min(1),
-    interviewAnswerText: z.string().min(20).max(8000),
-    rawStorageConsent: z.boolean().default(false)
-  })
-  .strict();
-
 export const UpdateEvidenceMaterialRequestSchema = z
   .object({
     analysisSessionId: z.string().min(1),
@@ -87,7 +78,6 @@ export const ParseProfileOutputSchema = envelope
       )
       .min(1),
     achievements: z.array(summaryText).default([]),
-    interviewExamples: z.array(summaryText).default([]),
     inputSummary: summaryText
   })
   .strict();
@@ -168,47 +158,6 @@ export const GeneratePlanOutputSchema = envelope
         code: z.ZodIssueCode.custom,
         message: "Plan must contain each week number exactly once."
       });
-    }
-  });
-
-export const GenerateInterviewSetOutputSchema = envelope
-  .extend({
-    questions: z
-      .array(
-        z
-          .object({
-            questionKey: z.string().min(1),
-            question: z.string().min(1).max(300),
-            category: z.enum(["behavioral", "role_skill", "gap", "portfolio_evidence"]),
-            linkedRequirementKey: z.string().nullable(),
-            linkedEvidenceGapKey: z.string().nullable(),
-            evaluationFocus: z.string().min(1).max(300)
-          })
-          .strict()
-      )
-      .length(6)
-  })
-  .strict()
-  .superRefine((value, ctx) => {
-    const counts = value.questions.reduce<Record<string, number>>((acc, question) => {
-      acc[question.category] = (acc[question.category] ?? 0) + 1;
-      return acc;
-    }, {});
-
-    const expected = {
-      behavioral: 2,
-      role_skill: 2,
-      gap: 1,
-      portfolio_evidence: 1
-    };
-
-    for (const [category, count] of Object.entries(expected)) {
-      if (counts[category] !== count) {
-        ctx.addIssue({
-          code: z.ZodIssueCode.custom,
-          message: `Interview set requires ${count} ${category} questions.`
-        });
-      }
     }
   });
 

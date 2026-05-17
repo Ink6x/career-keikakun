@@ -54,7 +54,6 @@ enum RawPayloadKind {
   career_history
   job_posting
   weekly_review_answer
-  interview_answer
 }
 
 enum RequirementType {
@@ -156,7 +155,6 @@ model AnalysisSession {
   careerPlan               CareerPlan?
   weeklyReviews            WeeklyReview[]
   reviewMessages           ReviewMessage[]
-  interviewQuestions       InterviewQuestion[]
   evidenceArtifacts        EvidenceArtifact[]
   pipelineRuns             PipelineRun[]
   providerCalls            ProviderCall[]
@@ -195,8 +193,6 @@ model RawPayload {
   inputDocument              InputDocument?   @relation(fields: [inputDocumentId], references: [id], onDelete: Restrict)
   reviewMessageId            String?          @unique
   reviewMessage              ReviewMessage?   @relation(fields: [reviewMessageId], references: [id], onDelete: Restrict)
-  interviewAnswerId          String?          @unique
-  interviewAnswer            InterviewAnswer? @relation(fields: [interviewAnswerId], references: [id], onDelete: Restrict)
   encryptedPayloadCiphertext String?
   encryptedPayloadNonce      String?
   encryptedPayloadAuthTag    String?
@@ -215,7 +211,6 @@ model CareerProfile {
   analysisSession              AnalysisSession @relation(fields: [analysisSessionId], references: [id], onDelete: Cascade)
   structuredExperienceJson     Json            @db.JsonB
   achievementsJson             Json            @db.JsonB
-  interviewExamplesJson        Json            @db.JsonB
   extractedSkillsSnapshotJson  Json            @db.JsonB
   summary                      String
   schemaVersion                String
@@ -251,7 +246,6 @@ model JobRequirement {
   requirementCoverage  RequirementCoverage[]
   evidenceGaps         EvidenceGap[]
   planTasks            PlanTask[]
-  interviewQuestions   InterviewQuestion[]
   evidenceArtifacts    EvidenceArtifact[]
 
   @@index([jobPostingId])
@@ -382,7 +376,6 @@ model EvidenceGap {
   expectedImpact        String
   createdAt             DateTime            @default(now())
   planTasks             PlanTask[]
-  interviewQuestions    InterviewQuestion[]
   evidenceArtifacts     EvidenceArtifact[]
 
   @@index([analysisSessionId, linkedRequirementId])
@@ -494,44 +487,6 @@ model EvidenceUpdate {
   evidenceArtifact   EvidenceArtifact? @relation(fields: [evidenceArtifactId], references: [id], onDelete: SetNull)
   metadataJson       Json              @db.JsonB
   createdAt          DateTime          @default(now())
-}
-
-model InterviewQuestion {
-  id                    String                @id @default(cuid())
-  analysisSessionId     String
-  analysisSession       AnalysisSession       @relation(fields: [analysisSessionId], references: [id], onDelete: Cascade)
-  question              String
-  category              String
-  linkedRequirementId   String?
-  linkedRequirement     JobRequirement?       @relation(fields: [linkedRequirementId], references: [id], onDelete: Restrict)
-  linkedEvidenceGapId   String?
-  linkedEvidenceGap     EvidenceGap?          @relation(fields: [linkedEvidenceGapId], references: [id], onDelete: Restrict)
-  evaluationFocus       String
-  createdAt             DateTime              @default(now())
-  answers               InterviewAnswer[]
-
-  @@index([analysisSessionId, category])
-}
-
-model InterviewAnswer {
-  id                  String               @id @default(cuid())
-  interviewQuestionId String
-  interviewQuestion   InterviewQuestion    @relation(fields: [interviewQuestionId], references: [id], onDelete: Cascade)
-  answerHash          String
-  answerSummary       String
-  createdAt           DateTime             @default(now())
-  rawPayload          RawPayload?
-  evaluation          InterviewEvaluation?
-}
-
-model InterviewEvaluation {
-  id                            String          @id @default(cuid())
-  interviewAnswerId             String          @unique
-  interviewAnswer               InterviewAnswer @relation(fields: [interviewAnswerId], references: [id], onDelete: Cascade)
-  evaluationJson                Json            @db.JsonB
-  suggestedEvidenceUpdatesJson  Json            @db.JsonB
-  improvedAnswerOutline         String
-  createdAt                     DateTime        @default(now())
 }
 
 model EvidenceArtifact {

@@ -1,12 +1,10 @@
 import {
   buildMockSession,
   createStructuredWeeklyReview,
-  evaluateMockInterviewAnswer,
   updateEvidenceArtifactStatus
 } from "@/lib/keikakun/mock-pipeline";
 import type {
   EvidenceMaterialStatus,
-  InterviewEvaluation,
   SessionBundle,
   WeeklyReview
 } from "@/lib/keikakun/types";
@@ -136,38 +134,6 @@ export function appendWeeklyReview(
 
   store().sessions.set(sessionId, updatedBundle);
   return review;
-}
-
-export function appendInterviewEvaluation(
-  sessionId: string,
-  visitorId: string,
-  questionKey: string,
-  answerText: string
-): InterviewEvaluation | null {
-  const bundle = getSessionForVisitor(sessionId, visitorId);
-  if (!bundle) {
-    return null;
-  }
-
-  const evaluation = evaluateMockInterviewAnswer(questionKey, answerText);
-  const updatedBundle: SessionBundle = {
-    ...bundle,
-    interview: {
-      ...bundle.interview,
-      evaluations: [...bundle.interview.evaluations, evaluation]
-    },
-    session: {
-      ...bundle.session,
-      workspaceProgress: {
-        ...bundle.session.workspaceProgress,
-        evaluatedAnswerCount: bundle.session.workspaceProgress.evaluatedAnswerCount + 1,
-        lastActivityAt: new Date().toISOString()
-      }
-    }
-  };
-
-  store().sessions.set(sessionId, updatedBundle);
-  return evaluation;
 }
 
 export function updateEvidenceMaterial(

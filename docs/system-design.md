@@ -17,18 +17,18 @@ and `docs/agent-development-guide.md`.
 ## 1. Current Decisions
 
 - Build the full public demo in the first implementation: Analyze, Plan, Review,
-  Interview Studio, Evidence Builder, Process Trace, README, tests, and CI.
+  Evidence Builder, Process Trace, README, tests, and CI.
 - Use anonymous sessions. Do not require account registration.
 - Use real provider execution first when configured, then deterministic mock
   fallback when the provider is unavailable, unconfigured, or fails validation.
 - Store derived structured data by default. The first implementation includes
-  opt-in encrypted raw storage for career history, job posting, review answers,
-  and interview answers when the user explicitly consents.
+  opt-in encrypted raw storage for career history, job posting, and review
+  answers when the user explicitly consents.
 - Keep scoring, state transitions, schema validation, audit events, and privacy
   filtering deterministic and testable.
-- Keep LLM responsibilities limited to semantic extraction, plan/question
-  drafting, summarization, and interview feedback. Evidence Builder does not use
-  LLM prose generation in the first design.
+- Keep LLM responsibilities limited to semantic extraction, plan drafting, and
+  summarization. Evidence Builder does not use LLM prose generation in the first
+  design.
 
 ## 2. System Boundary
 
@@ -42,7 +42,6 @@ and `docs/agent-development-guide.md`.
 - Deterministic skill normalization and match scoring.
 - 12-week plan generation and deterministic plan updates.
 - Weekly review workflow.
-- Interview question generation and answer evaluation.
 - Evidence material derivation and status tracking.
 - Process Trace and append-only audit events.
 - Privacy-safe persistence using hashes, summaries, structured outputs, and
@@ -68,7 +67,6 @@ Browser
   -> Application Services
        - AnalysisService
        - ReviewService
-       - InterviewService
        - EvidenceService
        - TraceService
   -> Domain Modules
@@ -118,9 +116,9 @@ sessions instead of overwriting old ones.
 ### Session Status
 
 Decision: `AnalysisSession.status` only represents the initial analysis pipeline
-state. Post-completion activity such as Review, Interview Studio, and Evidence
-Builder must be tracked on child records and `AuditEvent`, not by mutating the
-session status into activity-specific values.
+state. Post-completion activity such as Review and Evidence Builder must be
+tracked on child records and `AuditEvent`, not by mutating the session status
+into activity-specific values.
 
 ```text
 draft
@@ -141,8 +139,8 @@ Recommended enum:
 - `running`: analysis pipeline is executing.
 - `provider_fallback`: real provider failed or was unavailable, mock fallback is
   being used.
-- `completed`: Analyze, Plan, Interview questions, Evidence material records,
-  and Trace are available.
+- `completed`: Analyze, Plan, Evidence material records, and Trace are
+  available.
 - `validation_error`: input or provider output failed schema validation and no
   usable fallback completed.
 - `failed`: unexpected non-validation failure.
@@ -150,7 +148,6 @@ Recommended enum:
 Post-completion activity is derived from child records:
 
 - `WeeklyReview` and `PlanAdjustment` indicate review progress.
-- `InterviewAnswer` and `InterviewEvaluation` indicate interview progress.
 - `EvidenceArtifact` and `EvidenceUpdate` indicate evidence material progress.
 - `AuditEvent` records the append-only history of all important updates.
 
@@ -163,7 +160,6 @@ Recommended derived shape:
 ```ts
 workspaceProgress: {
   reviewCount: number
-  evaluatedAnswerCount: number
   evidenceMaterialCount: number
   readyEvidenceCount: number
   lastActivityAt: string | null
@@ -182,7 +178,6 @@ extractJobRequirements
 normalizeSkills
 scoreMatch
 generatePlan
-generateInterviewSet
 buildEvidenceBoard
 recordAuditEvent
 ```
@@ -272,7 +267,6 @@ Output:
 
 - `CareerProfile`
 - extracted profile skills
-- interview-ready examples
 - input summary
 
 Trace-safe output:
@@ -370,58 +364,18 @@ Trace-safe output:
 - linked gap count
 - validation result
 
-### `generateInterviewSet`
-
-Decision: initial analysis generates exactly 6 interview questions.
-
-Category distribution:
-
-- `behavioral`: 2
-- `role_skill`: 2
-- `gap`: 1
-- `portfolio_evidence`: 1
-
-Input:
-
-- target role
-- job requirements
-- evidence gaps
-- interview-ready examples
-- plan priorities
-
-Output:
-
-- `InterviewQuestion[]`
-
-Rules:
-
-- Each question must have a fixed category enum.
-- Each question should link to either a `JobRequirement` or an `EvidenceGap`
-  when possible.
-- At least one question must link to an `EvidenceGap`.
-- At least one question must ask about portfolio or evidence creation.
-- Avoid over-concentrating questions on one requirement.
-- Additional questions may be generated later, but the initial set remains 6.
-
-Trace-safe output:
-
-- question count
-- category counts
-- linked gap count
-
 ### `buildEvidenceBoard`
 
 Decision: Evidence Builder is an evidence material board, not a text generation
 surface. Initial analysis creates structured evidence material records from
 evidence gaps and plan tasks. It does not generate resume bullets, README
-sections, interview stories, or other prose drafts.
+sections, or other prose drafts.
 
 Input:
 
 - match analysis
 - evidence gaps
 - plan tasks
-- interview examples
 
 Output:
 
@@ -443,7 +397,7 @@ Required fields:
 - why it matters
 - evidence to create
 - next action
-- suggested source, for example plan, review, or interview
+- suggested source, for example plan or review
 - status: `not_started`, `in_progress`, `ready`, or `archived`
 - target week when available
 
@@ -451,11 +405,10 @@ Rules:
 
 - Create initial evidence material records from the highest-priority evidence
   gaps and related plan tasks.
-- Review and Interview activity may update status, add notes, or create
-  additional evidence material records.
+- Review activity may update status, add notes, or create additional evidence
+  material records.
 - Do not create generated text drafts.
-- Do not provide resume/README/interview-story rewrite actions in the first
-  design.
+- Do not provide resume/README rewrite actions in the first design.
 
 Trace-safe output:
 
@@ -463,7 +416,7 @@ Trace-safe output:
 - proof type counts
 - linked requirement/gap count
 
-## 8. Review, Interview, And Evidence Updates
+## 8. Review And Evidence Updates
 
 ### Review Update Flow
 
@@ -477,20 +430,6 @@ recordAuditEvent
 
 Review answers are treated as raw user input. Store only structured summary,
 hashes, and encrypted raw payload when explicit consent exists.
-
-### Interview Evaluation Flow
-
-```text
-selectQuestion
-submitAnswer
-hashAndSummarizeAnswer
-evaluateInterviewAnswer
-linkInterviewEvaluationToEvidence
-recordAuditEvent
-```
-
-Interview answers are not shown in Process Trace. Process Trace may show answer
-hash, question ID, evaluation status, and linked evidence material IDs.
 
 ### Evidence Board Update Flow
 
@@ -544,7 +483,6 @@ Signals:
 - project or artifact reference
 - decision-making example
 - repeated use across roles
-- interview-ready story
 
 Decision: unverifiable but plausible claims should be penalized aggressively.
 They usually count as `weak`, not `moderate`, unless there is supporting
@@ -626,7 +564,6 @@ Route Handlers own durable business workflows:
 - provider calls
 - pipeline execution
 - review submission
-- interview answer evaluation
 - evidence material updates
 - Process Trace reads
 - API-style integration tests
@@ -718,33 +655,6 @@ Response:
 - evidence updates
 - `rawStorageStored`: boolean
 - audit event reference
-
-### Get Interview Studio
-
-`GET /api/analysis-sessions/:id/interview`
-
-Response:
-
-- generated questions
-- answered question summaries
-- evaluations
-
-### Evaluate Interview Answer
-
-`POST /api/analysis-sessions/:id/interview-answers`
-
-Request:
-
-- `interviewQuestionId`
-- `answer`
-- `rawStorageConsent`
-
-Response:
-
-- evaluation
-- improved outline
-- linked evidence material updates
-- `rawStorageStored`: boolean
 
 ### Get Evidence Board
 
@@ -855,7 +765,7 @@ Consent rules:
 - If `rawStorageConsent` is true, store the encrypted payload in the shared
   `RawPayload` table.
 - Consent state is recorded as a reference such as `analysis:{sessionId}` or
-  `interview-answer:{answerId}`.
+  `review-message:{messageId}`.
 
 Encryption rules:
 
@@ -874,7 +784,6 @@ analysisSessionId
 kind
 inputDocumentId
 reviewMessageId
-interviewAnswerId
 encryptedPayloadCiphertext
 encryptedPayloadNonce
 encryptedPayloadAuthTag
@@ -885,8 +794,8 @@ createdAt
 clearedAt
 ```
 
-Exactly one subject link should be set for each `RawPayload`: `inputDocumentId`,
-`reviewMessageId`, or `interviewAnswerId`.
+Exactly one subject link should be set for each `RawPayload`: `inputDocumentId`
+or `reviewMessageId`.
 
 Read/decrypt rules:
 
@@ -904,8 +813,8 @@ Deletion rules:
   `status` to `cleared`, set `clearedAt`, and record an `AuditEvent` with no
   plaintext.
 - Whole-session deletion is allowed for demo data and should cascade from
-  `AnalysisSession` to derived analysis, plan, review, interview, evidence,
-  trace, audit, outbox, and raw payload records.
+  `AnalysisSession` to derived analysis, plan, review, evidence, trace, audit,
+  outbox, and raw payload records.
 
 ## 13. Open Design Questions
 

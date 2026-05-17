@@ -105,7 +105,7 @@ Strong evidence examples:
 - shipped project or artifact
 - decision-making example
 - repeated use across roles
-- interview-ready story with concrete context
+- presentable case memo with concrete context
 
 Weak evidence examples:
 

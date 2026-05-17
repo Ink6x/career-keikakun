@@ -1,7 +1,6 @@
 import type {
   EvidenceArtifact,
   EvidenceGap,
-  InterviewQuestion,
   JobRequirement,
   KeyFinding,
   PlanWeek,
@@ -24,7 +23,6 @@ export interface FixtureCase {
   keyFindings: KeyFinding[];
   skillMatches: SkillMatch[];
   planWeeks: PlanWeek[];
-  interviewQuestions: InterviewQuestion[];
   evidenceArtifacts: EvidenceArtifact[];
   nextAction: string;
 }
@@ -52,7 +50,6 @@ export function getFixtureCase(variant: FixtureVariant = "medium-main"): Fixture
       keyFindings: createKeyFindings("high-match"),
       skillMatches: createSkillMatches("high-match"),
       planWeeks,
-      interviewQuestions: createInterviewQuestions(),
       evidenceArtifacts: createEvidenceArtifacts(evidenceGaps),
       nextAction:
         "既に近い経験があります。最初の7日間は、改善施策の数字と判断理由を1枚のケースメモに整理してください。"
@@ -78,7 +75,6 @@ export function getFixtureCase(variant: FixtureVariant = "medium-main"): Fixture
       keyFindings: createKeyFindings("low-match"),
       skillMatches: createSkillMatches("low-match"),
       planWeeks,
-      interviewQuestions: createInterviewQuestions(),
       evidenceArtifacts: createEvidenceArtifacts(evidenceGaps),
       nextAction:
         "まず必須要件に近い経験を作る必要があります。最初の7日間は、顧客問い合わせを10件分類し、課題カテゴリを見える化してください。"
@@ -103,7 +99,6 @@ export function getFixtureCase(variant: FixtureVariant = "medium-main"): Fixture
     keyFindings: createKeyFindings("medium-main"),
     skillMatches: createSkillMatches("medium-main"),
     planWeeks,
-    interviewQuestions: createInterviewQuestions(),
     evidenceArtifacts: createEvidenceArtifacts(evidenceGaps),
     nextAction:
       "最初の7日間は、問い合わせ・要望・解約リスクの記録を20件だけ分類し、改善候補を3つに絞ってください。"
@@ -280,7 +275,7 @@ function createKeyFindings(variant: FixtureVariant): KeyFinding[] {
   return [
     finding("strength", "CS から Product Ops への転用可能性", "顧客要望整理、FAQ 改善、部門連携は目標職種に近い。"),
     finding("priority_gap", "データ分析とフィードバックループ", "分析、SQL、改善プロセス設計の証拠がまだ弱い。"),
-    finding("evidence_needed", "小さな分析成果物", "問い合わせ分類と改善候補のメモを作ると、面接で話せる証拠になる。")
+    finding("evidence_needed", "小さな分析成果物", "問い合わせ分類と改善候補のメモを作ると、応募時に見せられる証拠になる。")
   ];
 }
 
@@ -314,10 +309,10 @@ function createPlanWeeks(evidenceGaps: EvidenceGap[], strongPlan: boolean): Plan
     "改善効果を定量化する",
     "Product Ops 向けのケースメモを作る",
     "関係者説明のストーリーを整える",
-    "面接回答の弱い証拠を補う",
+    "弱い証拠を補強する追加メモを作る",
     "証拠素材を公開可能な形に整える",
-    "模擬面接で回答を圧縮する",
-    "応募・面接用の証拠セットを仕上げる"
+    "ケースメモを短く要約する練習をする",
+    "応募用の証拠セットを仕上げる"
   ];
 
   return objectives.map((objective, index) => {
@@ -347,17 +342,6 @@ function createPlanWeeks(evidenceGaps: EvidenceGap[], strongPlan: boolean): Plan
       ]
     };
   });
-}
-
-function createInterviewQuestions(): InterviewQuestion[] {
-  return [
-    question("q-behavior-1", "顧客からの繰り返し要望を、どのように整理して社内に伝えましたか。", "behavioral", "req-insight", null, "状況、判断、伝え方、結果の具体性"),
-    question("q-behavior-2", "更新リスクや問い合わせ増加に気づいたとき、どのように優先順位を決めましたか。", "behavioral", "req-stakeholder", null, "意思決定の根拠と関係者調整"),
-    question("q-role-1", "Product Operations として、サポートデータから改善候補を出すなら何を見ますか。", "role_skill", "req-data", "gap-data-report", "分析軸と改善提案の接続"),
-    question("q-role-2", "プロダクトチームへのフィードバックループを設計するなら、どの項目を記録しますか。", "role_skill", "req-feedback", "gap-feedback-loop", "運用設計と優先度付け"),
-    question("q-gap-1", "SQL や BI の経験が浅い点を、90日でどう補強しますか。", "gap", "req-sql", "gap-sql", "弱点の認識と具体的な補強計画"),
-    question("q-evidence-1", "面接で見せられる証拠素材を1つ作るなら、何を作り、何を証明しますか。", "portfolio_evidence", "req-process", "gap-quantified-outcome", "証拠の選び方と業務価値")
-  ];
 }
 
 function createEvidenceArtifacts(evidenceGaps: EvidenceGap[]): EvidenceArtifact[] {
@@ -454,20 +438,3 @@ function skillMatch(
   };
 }
 
-function question(
-  questionKey: string,
-  questionText: string,
-  category: InterviewQuestion["category"],
-  linkedRequirementKey: string | null,
-  linkedEvidenceGapKey: string | null,
-  evaluationFocus: string
-): InterviewQuestion {
-  return {
-    questionKey,
-    question: questionText,
-    category,
-    linkedRequirementKey,
-    linkedEvidenceGapKey,
-    evaluationFocus
-  };
-}

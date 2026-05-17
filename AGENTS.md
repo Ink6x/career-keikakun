@@ -14,7 +14,6 @@ career history and a target job posting, then the app produces:
 - evidence gaps and evidence materials
 - a 12-week preparation plan
 - weekly review workflow
-- Interview Studio
 - Process Trace for provider, validation, scoring, and audit visibility
 
 The project is a portfolio-grade AI product demo, not a production SaaS.
@@ -73,8 +72,8 @@ if needed.
 ## Architecture Rules
 
 - Route Handlers own durable workflows: persistence, provider calls, pipeline
-  execution, review submission, interview evaluation, evidence updates, Process
-  Trace reads, and API-style integration tests.
+  execution, review submission, evidence updates, Process Trace reads, and
+  API-style integration tests.
 - Server Actions are UI adapters only. They may wrap forms, redirects, and local
   UI transitions, but must call the same application services as Route
   Handlers.
@@ -95,8 +94,8 @@ if needed.
   or personal data.
 - The main fixture persona is BtoB SaaS Customer Success moving toward Product
   Operations / Customer Success Operations.
-- Raw career history, job posting, review answer, and interview answer text are
-  not persisted by default.
+- Raw career history, job posting, and review answer text are not persisted
+  by default.
 - If raw storage consent exists, store encrypted payloads through `RawPayload`.
 - `RawPayload` must be clearable without deleting derived analysis records.
 - Never commit secrets or `.env` files.
@@ -134,7 +133,6 @@ Minimum test coverage should include:
 - fixture tests for `medium-main`, `high-match`, and `low-match`
 - mock provider tests for the main analysis flow
 - review structuring and plan update tests
-- interview question generation and evaluation tests
 - evidence board derivation and status update tests
 - raw-storage consent, encryption, clear, and failure tests
 - idempotency tests for analysis and pipeline retries
@@ -166,7 +164,7 @@ Keep changes scoped to the requested task.
 ## Project-Specific Gotchas
 
 - `AnalysisSession.status` represents only the initial analysis pipeline.
-  Review, Interview, and Evidence progress are derived from child records.
+  Review and Evidence progress are derived from child records.
 - `JobPosting.roleTitle`, `AnalysisSession.extractedTargetRoleTitle`, and
   `CareerPlan.targetRole` are persisted separately, but UI shows one target role
   label.

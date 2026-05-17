@@ -82,8 +82,8 @@ Notes:
 - `AnalysisSession.userProfileId` should be nullable.
 - `InputDocument` stores hashes, summaries, token counts, and consent state. It
   does not store encrypted payload columns directly.
-- `RawPayload` stores encrypted raw payloads for input documents, weekly review
-  messages, and interview answers when explicit consent exists.
+- `RawPayload` stores encrypted raw payloads for input documents and weekly
+  review messages when explicit consent exists.
 - Plaintext raw input is never stored.
 
 ### Raw Payload
@@ -95,7 +95,7 @@ Normalize:
 Reason:
 
 - Encrypted raw storage has one lifecycle, regardless of whether the source is a
-  career history, job posting, weekly review answer, or interview answer.
+  career history, job posting, or weekly review answer.
 - Centralizing raw payloads makes key versioning, consent tracking, deletion,
   audit, and future reanalysis flows easier to reason about.
 - Derived analysis data remains usable after raw payload deletion.
@@ -107,7 +107,6 @@ Recommended fields:
 - `kind`
 - `inputDocumentId`
 - `reviewMessageId`
-- `interviewAnswerId`
 - `encryptedPayloadCiphertext`
 - `encryptedPayloadNonce`
 - `encryptedPayloadAuthTag`
@@ -120,9 +119,9 @@ Recommended fields:
 Rules:
 
 - `kind` should identify the raw source, for example `career_history`,
-  `job_posting`, `weekly_review_answer`, or `interview_answer`.
+  `job_posting`, or `weekly_review_answer`.
 - Exactly one subject link should be set:
-  `inputDocumentId`, `reviewMessageId`, or `interviewAnswerId`.
+  `inputDocumentId` or `reviewMessageId`.
 - Subject links should be one-to-one where raw storage is enabled.
 - Use a raw SQL check constraint for the exactly-one-subject rule if Prisma
   cannot express it directly.
@@ -144,8 +143,7 @@ Normalize:
 
 Reason:
 
-- `JobRequirement` is a first-class row in Analyze, Plan, Interview Studio, and
-  Evidence Builder.
+- `JobRequirement` is a first-class row in Analyze, Plan, and Evidence Builder.
 - Skills need canonical names, aliases, categories, and profile/requirement
   links for the skill map.
 - Alias and adjacency rules should be normalized so matching is explainable and
@@ -157,7 +155,6 @@ JSONB inside these records:
 
 - `CareerProfile.structuredExperienceJson`
 - `CareerProfile.achievementsJson`
-- `CareerProfile.interviewExamplesJson`
 - optional `CareerProfile.extractedSkillsSnapshotJson`
 
 Rule:
@@ -186,7 +183,7 @@ Normalize:
 Reason:
 
 - Requirement coverage, evidence gaps, and key findings are primary UI rows.
-- Evidence gaps link into Plan, Interview Studio, and Evidence Builder.
+- Evidence gaps link into Plan and Evidence Builder.
 - Coverage status and evidence strength are core scoring outputs.
 
 JSONB inside these records:
@@ -256,34 +253,6 @@ Rule:
   standalone UI rows.
 - Store encrypted raw review text through `RawPayload`, not on `ReviewMessage`.
 
-### Interview Studio
-
-Normalize:
-
-- `InterviewQuestion`
-- `InterviewAnswer`
-- `InterviewEvaluation`
-
-Reason:
-
-- Questions are primary UI rows and must link to requirements or evidence gaps.
-- Answers and evaluations are counted for workspace progress.
-- Evaluations can create evidence updates.
-
-JSONB inside these records:
-
-- `InterviewEvaluation.evaluationJson`
-- `InterviewEvaluation.suggestedEvidenceUpdatesJson`
-
-Rule:
-
-- Store `InterviewQuestion.question`, category, and links as normal columns.
-- Store `InterviewAnswer.answerHash` and `answerSummary` by default.
-- Store encrypted raw answer text through `RawPayload` only when explicit
-  consent exists.
-- `InterviewEvaluation.improvedAnswer` or improved answer outline may remain a
-  normal text column because it is a first-class Interview Studio output.
-
 ### Evidence Builder
 
 Normalize:
@@ -304,8 +273,8 @@ JSONB inside these records:
 
 Rule:
 
-- Do not store generated resume bullets, README sections, interview stories, or
-  rewrite drafts as artifact payloads.
+- Do not store generated resume bullets, README sections, or rewrite drafts as
+  artifact payloads.
 - Store material title, proof type, why it matters, evidence to create, next
   action, status, source, and links as normal columns.
 
@@ -339,8 +308,8 @@ JSONB inside these records:
 
 Rule:
 
-- Never store raw prompts, raw completions, stack traces, raw user input, or raw
-  answers in trace metadata.
+- Never store raw prompts, raw completions, stack traces, or raw user input in
+  trace metadata.
 - `ProviderCall` stores provider name, status, timing, token counts, model name,
   fallback reason, and redacted metadata only.
 
@@ -350,7 +319,6 @@ Use JSONB for these planned fields:
 
 - `CareerProfile.structuredExperienceJson`
 - `CareerProfile.achievementsJson`
-- `CareerProfile.interviewExamplesJson`
 - `CareerProfile.extractedSkillsSnapshotJson`
 - `MatchAnalysis.scoringBreakdownJson`
 - `MatchAnalysis.explanationSnapshotJson`
@@ -360,8 +328,6 @@ Use JSONB for these planned fields:
 - `ReviewMessage.metadataJson`
 - `PlanAdjustment.changeSetJson`
 - `EvidenceUpdate.metadataJson`
-- `InterviewEvaluation.evaluationJson`
-- `InterviewEvaluation.suggestedEvidenceUpdatesJson`
 - `PipelineStep.inputHashRefsJson`
 - `PipelineStep.summaryJson`
 - `ProviderCall.requestMetadataJson`
@@ -377,7 +343,6 @@ Do not use JSONB for:
 - evidence gaps
 - plan weeks
 - plan tasks
-- interview questions
 - evidence materials
 - pipeline steps
 - audit events
@@ -397,12 +362,9 @@ Adopt these constraints first:
 - `PipelineStep(pipelineRunId, stepName, attemptNumber)` is unique.
 - `RawPayload.inputDocumentId` is unique when present.
 - `RawPayload.reviewMessageId` is unique when present.
-- `RawPayload.interviewAnswerId` is unique when present.
 - `RawPayload` has a database check constraint so exactly one subject link is
   present.
 - `PlanTask` has a database check constraint so at least one of
-  `linkedRequirementId` or `linkedEvidenceGapId` is present.
-- `InterviewQuestion` has a database check constraint so at least one of
   `linkedRequirementId` or `linkedEvidenceGapId` is present.
 - `EvidenceArtifact` has a database check constraint so at least one of
   `sourceRequirementId` or `sourceEvidenceGapId` is present.
@@ -431,7 +393,6 @@ Adopt these indexes first:
 - `EvidenceGap(analysisSessionId, linkedRequirementId)`
 - `PlanTask(linkedRequirementId)`
 - `PlanTask(linkedEvidenceGapId)`
-- `InterviewQuestion(analysisSessionId, category)`
 - `EvidenceArtifact(analysisSessionId, status)`
 - `PipelineStep(pipelineRunId, stepName)`
 - `AuditEvent(analysisSessionId, createdAt)`
@@ -448,14 +409,14 @@ clearing for privacy, and hard referential actions for core workflow links.
 
 - `AnonymousVisitor` deletion cascades to its `AnalysisSession` records and
   their child records.
-- `AnalysisSession` deletion cascades to Analyze, Plan, Review, Interview,
-  Evidence Builder, Process Trace, Audit, Outbox, and RawPayload records.
+- `AnalysisSession` deletion cascades to Analyze, Plan, Review, Evidence
+  Builder, Process Trace, Audit, Outbox, and RawPayload records.
 - `RawPayload` can be cleared without deleting the session. Clearing sets
   encrypted payload fields to null, sets `status` to `cleared`, sets
   `clearedAt`, and writes an `AuditEvent` without plaintext.
-- Individual physical deletion of requirements, gaps, plan tasks, interview
-  questions, evidence materials, trace rows, or audit rows should not be exposed
-  as normal product behavior.
+- Individual physical deletion of requirements, gaps, plan tasks, evidence
+  materials, trace rows, or audit rows should not be exposed as normal product
+  behavior.
 - User-facing records that need to disappear from the UI should use status or
   `deletedAt` rather than physical deletion.
 - `AuditEvent` remains append-only while the session exists, then cascades when
@@ -473,11 +434,11 @@ Use these defaults:
 - `PipelineRun -> PipelineStep`: `Cascade`
 - `AnalysisSession -> PipelineRun`, `ProviderCall`, `SchemaValidation`,
   `AuditEvent`, `OutboxEvent`: `Cascade`
-- `InputDocument`, `ReviewMessage`, and `InterviewAnswer` subject links from
-  `RawPayload`: `Restrict` for individual subject deletion; session-level
-  deletion removes raw payloads with the rest of the session.
-- Requirement and gap links from `RequirementCoverage`, `PlanTask`,
-  `InterviewQuestion`, and `EvidenceArtifact`: `Restrict`
+- `InputDocument` and `ReviewMessage` subject links from `RawPayload`:
+  `Restrict` for individual subject deletion; session-level deletion removes raw
+  payloads with the rest of the session.
+- Requirement and gap links from `RequirementCoverage`, `PlanTask`, and
+  `EvidenceArtifact`: `Restrict`
 - Optional explanatory links, such as `EvidenceGap.linkedRequirementId`: nullable
   but `Restrict` when present.
 
@@ -489,13 +450,12 @@ soft deletion, or session deletion instead.
 
 | Area | Normalize | JSONB |
 | --- | --- | --- |
-| Career profile | `CareerProfile`, `ProfileSkill` | structured experience, achievements, interview examples, skill extraction snapshot |
+| Career profile | `CareerProfile`, `ProfileSkill` | structured experience, achievements, skill extraction snapshot |
 | Job posting | `JobPosting`, `JobRequirement`, `RequirementSkill` | none required initially |
 | Skill map | `SkillTaxonomy`, `SkillAlias`, `SkillAdjacencyRule`, `ProfileSkill`, `RequirementSkill` | optional alias/debug snapshot only |
 | Match analysis | `MatchAnalysis`, `RequirementCoverage`, `EvidenceGap`, `KeyFinding` | scoring breakdown, explanation snapshot, evidence references |
 | Plan | `CareerPlan`, `PlanWeek`, `PlanTask` | none required initially |
 | Review | `WeeklyReview`, `ReviewMessage`, `PlanAdjustment`, `EvidenceUpdate` | summaries, next actions, change sets, metadata |
-| Interview | `InterviewQuestion`, `InterviewAnswer`, `InterviewEvaluation` | evaluation details, suggested evidence updates |
 | Evidence Builder | `EvidenceArtifact`, `EvidenceUpdate` | optional metadata only |
 | Raw storage | `RawPayload` | none |
 | Process Trace | `PipelineRun`, `PipelineStep`, `ProviderCall`, `SchemaValidation`, `AuditEvent`, `OutboxEvent` | redacted metadata, hash refs, validation details, outbox payload |
