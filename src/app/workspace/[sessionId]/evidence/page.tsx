@@ -19,9 +19,9 @@ export default async function EvidencePage({ params }: PageProps) {
   return (
     <WorkspaceShell activeTab="evidence" session={bundle.session}>
       <SectionHeader
-        eyebrow="Evidence Builder"
+        eyebrow="証拠ボード"
         title="証拠素材ボード"
-        description="分析、計画、レビュー、面接練習から作るべき証拠素材を管理します。文章生成ではなく、素材の状態管理に限定します。"
+        description="分析・計画・レビュー・面接練習から作るべき証拠素材を管理します。文章生成ではなく、素材の状態管理に限定します。"
       />
       <EvidenceBoardClient
         sessionId={bundle.session.id}

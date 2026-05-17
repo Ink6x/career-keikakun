@@ -3,8 +3,8 @@
 @tailwind utilities;
 
 :root {
-  color: #18181b;
-  background: #eef2f7;
+  color: #08131a;
+  background: #ffffff;
 }
 
 * {
@@ -18,17 +18,28 @@ html {
 body {
   margin: 0;
   min-height: 100vh;
-  background: #eef2f7;
-  color: #18181b;
+  background: #ffffff;
+  color: #08131a;
   font-family:
-    Inter,
-    "Noto Sans JP",
-    YuGothic,
-    "Yu Gothic",
+    var(--font-sans),
+    "Hiragino Sans",
     "Hiragino Kaku Gothic ProN",
+    "Helvetica Neue",
+    Arial,
+    "Noto Sans JP",
+    Meiryo,
     sans-serif;
   font-size: 16px;
-  line-height: 1.65;
+  line-height: 1.9;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+@media (min-width: 640px) {
+  body {
+    font-size: 18px;
+    line-height: 2;
+  }
 }
 
 a {
@@ -48,5 +59,17 @@ textarea {
 }
 
 ::selection {
-  background: rgba(40, 75, 125, 0.18);
+  background: rgba(90, 200, 184, 0.24);
+}
+
+.heading {
+  font-family:
+    var(--font-heading),
+    "Zen Old Mincho",
+    "Hiragino Mincho ProN",
+    "Yu Mincho",
+    YuMincho,
+    serif;
+  font-feature-settings: "palt";
+  letter-spacing: 0.04em;
 }

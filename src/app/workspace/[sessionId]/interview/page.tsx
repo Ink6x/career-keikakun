@@ -19,9 +19,9 @@ export default async function InterviewPage({ params }: PageProps) {
   return (
     <WorkspaceShell activeTab="interview" session={bundle.session}>
       <SectionHeader
-        eyebrow="Interview Studio"
+        eyebrow="面接スタジオ"
         title="職種別の面接練習"
-        description="初期6問は、求人要件、証拠ギャップ、計画の優先度に基づいて固定カテゴリで生成されています。"
+        description="初期6問は、求人要件・証拠ギャップ・計画の優先度に基づいて固定カテゴリで生成されています。"
       />
       <InterviewStudioClient sessionId={bundle.session.id} questions={bundle.interview.questions} />
     </WorkspaceShell>
