@@ -1,6 +1,5 @@
 import { describe, expect, it } from "vitest";
 import {
-  GenerateInterviewSetOutputSchema,
   GeneratePlanOutputSchema,
   ParseProfileOutputSchema,
   StartAnalysisRequestSchema
@@ -50,7 +49,6 @@ describe("schemas", () => {
           }
         ],
         achievements: [],
-        interviewExamples: [],
         inputSummary: "safe summary",
         confidence: 0.9
       })
@@ -66,24 +64,6 @@ describe("schemas", () => {
         targetRole: "Product Ops",
         planSummary: "plan",
         weeks: []
-      })
-    ).toThrow();
-  });
-
-  it("requires fixed interview question distribution", () => {
-    expect(() =>
-      GenerateInterviewSetOutputSchema.parse({
-        schemaVersion: SCHEMA_VERSION,
-        locale: "ja-JP",
-        warnings: [],
-        questions: Array.from({ length: 6 }, (_, index) => ({
-          questionKey: `q-${index}`,
-          question: "質問です",
-          category: "behavioral",
-          linkedRequirementKey: null,
-          linkedEvidenceGapKey: null,
-          evaluationFocus: "specificity"
-        }))
       })
     ).toThrow();
   });

@@ -62,15 +62,9 @@ export type EvidenceProofType =
   | "work_sample"
   | "project_demo"
   | "process_document"
-  | "technical_note"
-  | "interview_example";
+  | "technical_note";
 export type EvidenceMaterialStatus = "not_started" | "in_progress" | "ready" | "archived";
-export type EvidenceSource = "analysis" | "plan" | "review" | "interview";
-export type InterviewQuestionCategory =
-  | "behavioral"
-  | "role_skill"
-  | "gap"
-  | "portfolio_evidence";
+export type EvidenceSource = "analysis" | "plan" | "review";
 export type ReviewProgressStatus = "on_track" | "blocked" | "adjusted";
 
 export interface AnalysisSessionSummary {
@@ -86,7 +80,6 @@ export interface AnalysisSessionSummary {
   completedAt: string;
   workspaceProgress: {
     reviewCount: number;
-    evaluatedAnswerCount: number;
     evidenceMaterialCount: number;
     readyEvidenceCount: number;
     lastActivityAt: string | null;
@@ -191,31 +184,6 @@ export interface CareerPlan {
   weeks: PlanWeek[];
 }
 
-export interface InterviewQuestion {
-  questionKey: string;
-  question: string;
-  category: InterviewQuestionCategory;
-  linkedRequirementKey: string | null;
-  linkedEvidenceGapKey: string | null;
-  evaluationFocus: string;
-}
-
-export interface InterviewEvaluation {
-  questionKey: string;
-  answerSummary: string;
-  scores: {
-    structure: number;
-    specificity: number;
-    roleRelevance: number;
-    evidenceStrength: number;
-    overall: number;
-  };
-  strengths: string[];
-  improvementPoints: string[];
-  missingEvidence: string[];
-  improvedAnswerOutline: string;
-}
-
 export interface EvidenceArtifact {
   artifactKey: string;
   proofType: EvidenceProofType;
@@ -312,11 +280,6 @@ export interface SessionBundle {
     reviewHistory: WeeklyReview[];
     openTasks: PlanTask[];
     latestAdjustments: string[];
-  };
-  interview: {
-    questions: InterviewQuestion[];
-    evaluations: InterviewEvaluation[];
-    linkedEvidenceMaterials: EvidenceArtifact[];
   };
   evidence: {
     materials: EvidenceArtifact[];
