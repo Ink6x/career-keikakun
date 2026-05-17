@@ -23,8 +23,8 @@ export default async function ReviewPage({ params, searchParams }: PageProps) {
   return (
     <WorkspaceShell activeTab="review" session={bundle.session}>
       <SectionHeader
-        eyebrow="Review"
-        title="週次レビュー"
+        eyebrow="週次レビュー"
+        title="今週の振り返り"
         description="チャット風の入力を、計画更新に使える構造化レビューへ変換します。"
       />
       <ReviewClient

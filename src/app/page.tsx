@@ -1,54 +1,65 @@
 import Link from "next/link";
-import { ArrowRight, FileText, Sparkles } from "lucide-react";
+import { Database, FileUp } from "lucide-react";
+import { Card } from "@/components/ui/Card";
+import { buttonClassName } from "@/components/ui/Button";
 
 export default function HomePage() {
   return (
-    <main className="min-h-screen bg-brand-surface px-4 py-8 md:px-8">
-      <section className="mx-auto flex min-h-[calc(100vh-64px)] max-w-[960px] flex-col justify-center">
-        <div className="max-w-3xl">
-          <p className="mb-3 text-sm font-bold text-brand-navy">キャリアけいかくん</p>
-          <h1 className="text-[30px] font-bold leading-tight md:text-[40px]">
-            職務経歴と求人票から、90日で作るべき証拠を整理する
-          </h1>
-          <p className="mt-5 max-w-2xl text-base text-brand-muted">
-            経験、求人要件、スキル差分、証拠不足をまとめて分析し、週ごとの準備計画と面接練習につなげます。
-          </p>
-        </div>
-
-        <div className="mt-10 grid gap-4 md:grid-cols-2">
-          <Link
-            href="/analyze?mode=sample"
-            className="group rounded-lg border border-brand-border bg-white p-5 transition hover:shadow-clickable"
-          >
-            <div className="mb-5 flex h-11 w-11 items-center justify-center rounded-lg bg-brand-navy text-white">
-              <Sparkles size={22} aria-hidden="true" />
-            </div>
-            <h2 className="text-xl font-bold">サンプルデータで試す</h2>
-            <p className="mt-2 text-sm text-brand-muted">
-              BtoB SaaS CS から Product Operations を目指すデモケースを読み込みます。
+    <main className="flex min-h-screen flex-col bg-brand-surface">
+      <section className="flex flex-1 items-center px-page-x py-section-y">
+        <div className="mx-auto w-full max-w-page">
+          <div className="text-center">
+            <h1 className="font-marker text-brand-title text-brand-ink">
+              キャリアけいかくん
+            </h1>
+            <p className="mt-6 text-brand-ink sm:mt-8">
+              職務経歴書と求人票から、90日後に転職するまでの行動計画をAIと一緒にたててみよう
             </p>
-            <span className="mt-6 inline-flex min-h-11 items-center gap-2 rounded-lg bg-brand-navy px-4 text-sm font-semibold text-white">
-              Start with sample
-              <ArrowRight size={16} aria-hidden="true" />
-            </span>
-          </Link>
+          </div>
 
-          <Link
-            href="/analyze"
-            className="group rounded-lg border border-brand-border bg-white p-5 transition hover:shadow-clickable"
-          >
-            <div className="mb-5 flex h-11 w-11 items-center justify-center rounded-lg bg-brand-surface text-brand-navy">
-              <FileText size={22} aria-hidden="true" />
-            </div>
-            <h2 className="text-xl font-bold">自分の内容を分析する</h2>
-            <p className="mt-2 text-sm text-brand-muted">
-              職務経歴と求人票を貼り付けて、mock fallback の分析フローを実行します。
-            </p>
-            <span className="mt-6 inline-flex min-h-11 items-center gap-2 rounded-lg border border-[#c8d2e0] px-4 text-sm font-semibold text-brand-navy">
-              Analyze my content
-              <ArrowRight size={16} aria-hidden="true" />
-            </span>
-          </Link>
+          <div className="mt-10 grid gap-5 sm:mt-14 sm:gap-6 sm:grid-cols-2">
+            <Card className="flex flex-col items-start p-6 sm:p-8">
+              <Database
+                size={28}
+                strokeWidth={1.6}
+                aria-hidden="true"
+                className="text-brand-ink"
+              />
+              <h2 className="heading mt-5 text-card-title font-bold text-brand-ink sm:mt-6">
+                サンプルデータで始める
+              </h2>
+              <p className="mt-3 text-[15px] leading-[1.9] text-brand-muted sm:mt-4">
+                架空のプロフィールを使って、キャリアプランニングの機能をすぐに体験できます。
+              </p>
+              <Link
+                href="/analyze?mode=sample"
+                className={buttonClassName("secondary", "mt-6 w-full sm:mt-8")}
+              >
+                お試しスタート
+              </Link>
+            </Card>
+
+            <Card className="flex flex-col items-start p-6 sm:p-8">
+              <FileUp
+                size={28}
+                strokeWidth={1.6}
+                aria-hidden="true"
+                className="text-brand-primary"
+              />
+              <h2 className="heading mt-5 text-card-title font-bold text-brand-ink sm:mt-6">
+                自分のデータで始める
+              </h2>
+              <p className="mt-3 text-[15px] leading-[1.9] text-brand-muted sm:mt-4">
+                あなたの職務経歴や目標を入力し、本格的なキャリアプランニングを開始します。
+              </p>
+              <Link
+                href="/analyze"
+                className={buttonClassName("primary", "mt-6 w-full sm:mt-8")}
+              >
+                本格スタート
+              </Link>
+            </Card>
+          </div>
         </div>
       </section>
     </main>
